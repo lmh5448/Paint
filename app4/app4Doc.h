@@ -12,7 +12,6 @@
 // app4Doc.h : Capp4Doc 클래스의 인터페이스
 //
 
-
 #pragma once
 
 
@@ -40,6 +39,15 @@ public:
 	int m_brightless;
 	BOOL *m_filter_check = new BOOL[10];
 	int m_filter_size = 10;
+	//1-연필, 2-선분, 3-사각형, 4-동그라미
+	int m_state = 0;
+	int m_line_x=-1;
+	int m_line_y=-1;
+	int m_color_r=0;
+	int m_color_g=0;
+	int m_color_b=0;
+	double m_gamma = 1.0;
+	BOOL m_draw_check = false;
 // 작업입니다.
 public:
 
@@ -82,6 +90,8 @@ public:
 	afx_msg void Filter_auto_contrast();
 	afx_msg void Filter_bright();
 	afx_msg void Filter_brightless();
+	afx_msg void Filter_gamma();
+	afx_msg void Filter_histogram();
 	afx_msg void Onavgfilter();
 	afx_msg void OnUpdateavgfilter(CCmdUI *pCmdUI);
 	afx_msg void Onautocontrast();
@@ -90,4 +100,10 @@ public:
 	afx_msg void OnUpdatebright(CCmdUI *pCmdUI);
 	afx_msg void Onbrightless();
 	afx_msg void OnUpdatebrightless(CCmdUI *pCmdUI);
+	afx_msg void Onpaintline();
+	afx_msg void OnUpdatepaintline(CCmdUI *pCmdUI);
+	afx_msg void Onpaintsegment();
+	afx_msg void OnUpdatepaintsegment(CCmdUI *pCmdUI);
+	afx_msg void OnCheck2();
+	afx_msg void OnUpdateCheck2(CCmdUI *pCmdUI);
 };

@@ -38,7 +38,9 @@
 #define ID_WRITE_PASTEASHYPERLINK       32770
 #define ID_32771                        32771
 #define ID_BUTTON2                      32772
+#define ID_paint_line                   32772
 #define ID_BUTTON3                      32773
+#define ID_BUTTON_RECT                  32773
 #define ID_BUTTON4                      32774
 #define ID_BUTTON5                      32775
 #define ID_BUTTON6                      32776
@@ -49,13 +51,18 @@
 #define ID_bright                       32784
 #define ID_brightless                   32785
 #define ID_BUTTON14                     32795
+#define ID_paint_segment                32796
+#define ID_COMBO2                       32797
+#define ID_CHECK2                       32798
+#define ID_COMBO3                       32799
+#define ID_COMBO4                       32800
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        316
-#define _APS_NEXT_COMMAND_VALUE         32796
+#define _APS_NEXT_COMMAND_VALUE         32801
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           310
 #endif

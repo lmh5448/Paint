@@ -33,6 +33,11 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWndEx)
 	ON_COMMAND(ID_SLIDER3, &CMainFrame::OnSlider3)
 //	ON_WM_GETMINMAXINFO()
 //ON_WM_SIZE()
+//ON_WM_LBUTTONDBLCLK()
+ON_COMMAND(ID_COMBO2, &CMainFrame::OnCombo2)
+ON_UPDATE_COMMAND_UI(ID_COMBO2, &CMainFrame::OnUpdateCombo2)
+ON_COMMAND(ID_COMBO3, &CMainFrame::OnCombo3)
+ON_UPDATE_COMMAND_UI(ID_COMBO3, &CMainFrame::OnUpdateCombo3)
 END_MESSAGE_MAP()
 
 // CMainFrame 생성/소멸
@@ -61,6 +66,19 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		TRACE0("상태 표시줄을 만들지 못했습니다.\n");
 		return -1;      // 만들지 못했습니다.
 	}
+
+	CMFCRibbonComboBox* pComboBox = DYNAMIC_DOWNCAST(CMFCRibbonComboBox, m_wndRibbonBar.FindByID(ID_COMBO2));
+	pComboBox->AddItem(CA2W("검정"));
+	pComboBox->AddItem(CA2W("빨강"));
+	pComboBox->AddItem(CA2W("초록"));
+	pComboBox->AddItem(CA2W("파랑"));
+	pComboBox->OnSelectItem(0);
+
+	pComboBox = DYNAMIC_DOWNCAST(CMFCRibbonComboBox, m_wndRibbonBar.FindByID(ID_COMBO3));
+	pComboBox->AddItem(CA2W("1"));
+	pComboBox->AddItem(CA2W("2.5"));
+	pComboBox->AddItem(CA2W("1/2.5"));
+	pComboBox->OnSelectItem(0);
 
 	CString strTitlePane1;
 	CString strTitlePane2;
@@ -225,3 +243,79 @@ void CMainFrame::OnSlider3()
 //
 //	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
 //}
+
+
+//void CMainFrame::OnLButtonDblClk(UINT nFlags, CPoint point)
+//{
+//	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+//	AfxMessageBox(_T("더블클릭이지"));
+//	CFrameWndEx::OnLButtonDblClk(nFlags, point);
+//}
+
+
+void CMainFrame::OnCombo2()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CMFCRibbonComboBox* pComboBox = DYNAMIC_DOWNCAST(CMFCRibbonComboBox, m_wndRibbonBar.FindByID(ID_COMBO2));
+	int nCurSel = pComboBox->GetCurSel();
+	Capp4Doc* pDoc = (Capp4Doc*)GetActiveDocument();
+	if (nCurSel == 0) {
+		pDoc->m_color_r = 0;
+		pDoc->m_color_g = 0;
+		pDoc->m_color_b = 0;
+	}
+	else if (nCurSel == 1) {
+		pDoc->m_color_r = 255;
+		pDoc->m_color_g = 0;
+		pDoc->m_color_b = 0;
+	}
+	else if (nCurSel == 2) {
+		pDoc->m_color_r = 0;
+		pDoc->m_color_g = 255;
+		pDoc->m_color_b = 0;
+	}
+	else if (nCurSel == 3) {
+		pDoc->m_color_r = 0;
+		pDoc->m_color_g = 0;
+		pDoc->m_color_b = 255;
+	}
+}
+
+
+void CMainFrame::OnUpdateCombo2(CCmdUI *pCmdUI)
+{
+	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
+	CMFCRibbonComboBox* pComboBox = DYNAMIC_DOWNCAST(CMFCRibbonComboBox, m_wndRibbonBar.FindByID(ID_COMBO2));
+	int nCurSel = pComboBox->GetCurSel();
+	pCmdUI->SetCheck(nCurSel);
+}
+
+
+void CMainFrame::OnCombo3()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CMFCRibbonComboBox* pComboBox = DYNAMIC_DOWNCAST(CMFCRibbonComboBox, m_wndRibbonBar.FindByID(ID_COMBO3));
+	int nCurSel = pComboBox->GetCurSel();
+	Capp4Doc* pDoc = (Capp4Doc*)GetActiveDocument();
+	if (nCurSel == 0) {
+		pDoc->m_filter_check[4] = false;
+		pDoc->m_gamma = 1;
+	}else if (nCurSel == 1) {
+		pDoc->m_filter_check[4] = true;
+		pDoc->m_gamma = 2.5;
+	}
+	else if (nCurSel == 2) {
+		pDoc->m_filter_check[4] = true;
+		pDoc->m_gamma = 1/2.5;
+	}
+	pDoc->Filter();
+}
+
+
+void CMainFrame::OnUpdateCombo3(CCmdUI *pCmdUI)
+{
+	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
+	CMFCRibbonComboBox* pComboBox = DYNAMIC_DOWNCAST(CMFCRibbonComboBox, m_wndRibbonBar.FindByID(ID_COMBO3));
+	int nCurSel = pComboBox->GetCurSel();
+	pCmdUI->SetCheck(nCurSel);
+}

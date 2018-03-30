@@ -47,6 +47,12 @@ BEGIN_MESSAGE_MAP(Capp4Doc, CDocument)
 	ON_UPDATE_COMMAND_UI(ID_bright, &Capp4Doc::OnUpdatebright)
 	ON_COMMAND(ID_brightless, &Capp4Doc::Onbrightless)
 	ON_UPDATE_COMMAND_UI(ID_brightless, &Capp4Doc::OnUpdatebrightless)
+	ON_COMMAND(ID_paint_line, &Capp4Doc::Onpaintline)
+	ON_UPDATE_COMMAND_UI(ID_paint_line, &Capp4Doc::OnUpdatepaintline)
+	ON_COMMAND(ID_paint_segment, &Capp4Doc::Onpaintsegment)
+	ON_UPDATE_COMMAND_UI(ID_paint_segment, &Capp4Doc::OnUpdatepaintsegment)
+	ON_COMMAND(ID_CHECK2, &Capp4Doc::OnCheck2)
+	ON_UPDATE_COMMAND_UI(ID_CHECK2, &Capp4Doc::OnUpdateCheck2)
 END_MESSAGE_MAP()
 
 
@@ -199,8 +205,6 @@ BOOL Capp4Doc::OnOpenDocument(LPCTSTR lpszPathName)
 	}
 	m_bright = 0;
 	m_brightless = 0;
-
-	SetWindowPos(NULL,NULL, 100, 100, m_height, m_width, SWP_NOZORDER);
 
 	return TRUE;
 }
@@ -386,6 +390,7 @@ void Capp4Doc::OnButtonSave()
 void Capp4Doc::Filter() {
 	if (m_file_path == "")return;
 	memcpy(m_imagedata, m_imagedata_ori, m_imagedata_size);
+	
 	if (m_filter_check[0]) {
 		Filter_avg();
 		memcpy(m_imagedata, m_imagedata_temp, m_imagedata_size);
@@ -399,8 +404,12 @@ void Capp4Doc::Filter() {
 	if (m_filter_check[3]) {
 		Filter_brightless();
 	}
-
-
+	if (m_filter_check[4]) {
+		Filter_gamma();
+	}
+	if (m_filter_check[5]) {
+		Filter_histogram();
+	}
 
 
 	UpdateAllViews(NULL);
@@ -493,6 +502,52 @@ void Capp4Doc::Filter_brightless()
 	return;
 }
 
+void Capp4Doc::Filter_gamma()
+{
+	BYTE arrPow[255];
+	for (int i = 0; i < 255; i++) {
+		arrPow[i] = (BYTE)(pow(i / 255.0, m_gamma) * 255 + 0.5);
+	}
+	for (int i = 0; i < m_height; i++) {
+		for (int j = 0; j < m_width; j++) {
+			for (int k = 0; k < 3; k++) {
+				m_imagedata[i*m_step + j*m_channels + k] = arrPow[m_imagedata[i*m_step + j*m_channels + k]];
+			}
+		}
+	}
+	return;
+}
+
+void Capp4Doc::Filter_histogram()
+{
+	int image_size = m_width * m_height;
+	int histogram_gray[256] = { 0 };
+	for (int i = 0; i < m_height; i++) {
+		for (int j = 0; j < m_width; j++) {
+			histogram_gray[(int)(
+				(m_imagedata[i*m_step + j*m_channels + 0] * 114 +
+					m_imagedata[i*m_step + j*m_channels + 1] * 578 +
+					m_imagedata[i*m_step + j*m_channels + 2] * 308) / 1000)]++;
+		}
+	}
+	for (int i = 1; i < 256; i++) {
+		histogram_gray[i] = histogram_gray[i] + histogram_gray[i - 1];
+	}
+	for (int i = 0; i < 256; i++) {
+		histogram_gray[i] = (BYTE)(histogram_gray[i] * 255 / image_size + 0.5);
+	}
+	for (int i = 0; i < m_height; i++) {
+		for (int j = 0; j < m_width; j++) {
+			int index = i*m_step + j*m_channels;
+			int gray_value = (int)((m_imagedata[index + 0] * 114 + m_imagedata[index + 1] * 578 + m_imagedata[index + 0] * 308) / 1000);
+			int v = histogram_gray[gray_value] - gray_value;
+			m_imagedata[index + 0] = CLIP(m_imagedata[index + 0] + v);
+			m_imagedata[index + 1] = CLIP(m_imagedata[index + 1] + v);
+			m_imagedata[index + 2] = CLIP(m_imagedata[index + 2] + v);
+		}
+	}
+}
+
 void Capp4Doc::Onavgfilter()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
@@ -550,4 +605,59 @@ void Capp4Doc::OnUpdatebrightless(CCmdUI *pCmdUI)
 {
 	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
 	pCmdUI->SetCheck(m_filter_check[3]);
+}
+
+
+void Capp4Doc::Onpaintline()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	m_state = 1;
+}
+
+
+void Capp4Doc::OnUpdatepaintline(CCmdUI *pCmdUI)
+{
+	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
+	if (m_state == 1) {
+		pCmdUI->SetCheck(true);
+	}
+	else {
+		pCmdUI->SetCheck(false);
+	}
+}
+
+
+void Capp4Doc::Onpaintsegment()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	m_state = 2;
+}
+
+
+void Capp4Doc::OnUpdatepaintsegment(CCmdUI *pCmdUI)
+{
+	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
+	if (m_state == 2) {
+		pCmdUI->SetCheck(true);
+	}
+	else {
+		pCmdUI->SetCheck(false);
+		m_line_x = -1;
+		m_line_y = -1;
+	}
+}
+
+
+void Capp4Doc::OnCheck2()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	m_filter_check[5] = !m_filter_check[5];
+	Filter();
+}
+
+
+void Capp4Doc::OnUpdateCheck2(CCmdUI *pCmdUI)
+{
+	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
+	pCmdUI->SetCheck(m_filter_check[5]);
 }

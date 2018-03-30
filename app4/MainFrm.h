@@ -10,7 +10,7 @@
 // All rights reserved.
 
 // MainFrm.h : CMainFrame 클래스의 인터페이스
-//
+
 #include"app4Doc.h";
 
 #pragma once
@@ -58,6 +58,11 @@ public:
 	afx_msg void OnSlider3();
 //	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
 //	afx_msg void OnSize(UINT nType, int cx, int cy);
+//	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
+	afx_msg void OnCombo2();
+	afx_msg void OnUpdateCombo2(CCmdUI *pCmdUI);
+	afx_msg void OnCombo3();
+	afx_msg void OnUpdateCombo3(CCmdUI *pCmdUI);
 };
 
 
