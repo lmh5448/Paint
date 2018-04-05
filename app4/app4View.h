@@ -14,7 +14,6 @@
 
 #pragma once
 
-
 class Capp4View : public CView
 {
 protected: // serialization에서만 만들어집니다.
@@ -25,6 +24,9 @@ protected: // serialization에서만 만들어집니다.
 public:
 	Capp4Doc* GetDocument() const;
 	CPoint Previous_;
+	CPoint Previous_check;
+	CPoint Start_;
+	CDC m_BackBufferDC;
 // 작업입니다.
 public:
 
@@ -52,12 +54,12 @@ protected:
 public:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnDestroy();
-//	afx_msg void OnMButtonDown(UINT nFlags, CPoint point);
-	afx_msg void bitmap_paint(Capp4Doc* pDoc, CPoint point);
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
-//	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
 	virtual void OnInitialUpdate();
+	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnEditUndo();
+	afx_msg void OnEditRedo();
 };
 
 #ifndef _DEBUG  // app4View.cpp의 디버그 버전

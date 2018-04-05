@@ -23,6 +23,8 @@
 
 #include <propkey.h>
 #include <cmath>
+#include"app4View.h"
+#include"MainFrm.h"
 
 #define CLIP(x) ((x>255 )? 255 : (x<0 ? 0 : x))
 
@@ -205,6 +207,24 @@ BOOL Capp4Doc::OnOpenDocument(LPCTSTR lpszPathName)
 	}
 	m_bright = 0;
 	m_brightless = 0;
+
+	//////////////////////////////////
+	Capp4View* pView = (Capp4View*)((CMainFrame*)AfxGetMainWnd())->GetActiveView();
+	HANDLE handle = ::LoadImage(AfxGetInstanceHandle(), lpszPathName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_LOADMAP3DCOLORS);
+	if (!handle) {
+		return false;
+	}
+	m_Cbitmap.DeleteObject();
+	m_Cbitmap.Attach((HBITMAP)handle);
+	m_Cbitmap.GetBitmap(&m_bmpinfo);
+	HANDLE handle2 = ::LoadImage(AfxGetInstanceHandle(), lpszPathName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_LOADMAP3DCOLORS);
+	if (!handle2) {
+		return false;
+	}
+	m_Cbitmap_ori.DeleteObject();
+	m_Cbitmap_ori.Attach((HBITMAP)handle2);
+	m_Cbitmap_ori.GetBitmap(&m_bmpinfo);
+	//////////////////////////////////
 
 	return TRUE;
 }
@@ -411,7 +431,6 @@ void Capp4Doc::Filter() {
 		Filter_histogram();
 	}
 
-
 	UpdateAllViews(NULL);
 	return;
 }
@@ -611,7 +630,7 @@ void Capp4Doc::OnUpdatebrightless(CCmdUI *pCmdUI)
 void Capp4Doc::Onpaintline()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	m_state = 1;
+	m_state = m_state==1? 0 : 1;
 }
 
 
@@ -630,7 +649,7 @@ void Capp4Doc::OnUpdatepaintline(CCmdUI *pCmdUI)
 void Capp4Doc::Onpaintsegment()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	m_state = 2;
+	m_state = m_state==2? 0 : 2;
 }
 
 
@@ -642,8 +661,6 @@ void Capp4Doc::OnUpdatepaintsegment(CCmdUI *pCmdUI)
 	}
 	else {
 		pCmdUI->SetCheck(false);
-		m_line_x = -1;
-		m_line_y = -1;
 	}
 }
 

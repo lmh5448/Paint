@@ -22,6 +22,29 @@
 #include "app4Doc.h"
 #include "app4View.h"
 
+#include<vector>
+#include<stack>
+using namespace std;
+struct Draw_info
+{
+	int x1;
+	int y1;
+	int x2;
+	int y2;
+	//CPen pen;
+	int check;
+
+	int thickness;
+	int r;
+	int g;
+	int b;
+
+	int type;
+};
+
+vector<Draw_info> v;
+stack<Draw_info> s;
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -40,6 +63,9 @@ BEGIN_MESSAGE_MAP(Capp4View, CView)
 	ON_WM_LBUTTONDOWN()
 	ON_WM_MOUSEMOVE()
 //	ON_WM_LBUTTONDBLCLK()
+ON_WM_LBUTTONUP()
+ON_COMMAND(ID_EDIT_UNDO, &Capp4View::OnEditUndo)
+ON_COMMAND(ID_EDIT_REDO, &Capp4View::OnEditRedo)
 END_MESSAGE_MAP()
 
 // Capp4View 생성/소멸
@@ -72,28 +98,57 @@ void Capp4View::OnDraw(CDC* pDC)
 		return;
 
 	// TODO: 여기에 원시 데이터에 대한 그리기 코드를 추가합니다.
-	//bitmapinfo 구조체부터 만들기
-	SetStretchBltMode(pDC->m_hDC, COLORONCOLOR);
-	pDoc->m_info_header.biHeight = pDoc->m_height*(-1);
-	::StretchDIBits(pDC->m_hDC, 0, 0, pDoc->m_width, pDoc->m_height,
-		0, 0, pDoc->m_width, pDoc->m_height,
-		pDoc->m_imagedata, (LPBITMAPINFO)&pDoc->m_info_header,
-		DIB_RGB_COLORS, SRCCOPY);
-	pDoc->m_info_header.biHeight = pDoc->m_height;
+	////////////////////////////////////////////////////////////
+	//copy
+	BYTE* copy_temp = new BYTE[pDoc->m_imagedata_size];
+	BITMAPINFO info_header;
+	info_header.bmiHeader = pDoc->m_info_header;
+	GetDIBits(pDC->m_hDC, pDoc->m_Cbitmap_ori, 0, pDoc->m_height, copy_temp, &info_header, DIB_RGB_COLORS);
+	SetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, copy_temp, &info_header, DIB_RGB_COLORS);
+	////////////////////////////////////////////////////////////
 
+	CDC memDC;
+	memDC.CreateCompatibleDC(pDC);
+	memDC.SelectObject(&pDoc->m_Cbitmap);
 
-	/////////////////////////////////
-	if(pDoc->m_draw_check){
-		CBitmap* pBmSrc = pDC->GetCurrentBitmap();
-		LPBITMAPINFO bitmap_info = NULL;
-		bitmap_info->bmiHeader = pDoc->m_info_header;
-		int v = GetDIBits(pDC->m_hDC, *pBmSrc, 0, 0, pDoc->m_imagedata_ori, bitmap_info, DIB_RGB_COLORS);
-		AfxMessageBox(v);
-		pDoc->m_draw_check = false;
+	////
+	//그림 그리는 부분
+	CPoint point1;
+	CPoint point2;
+
+	for (int i = 0; i < v.size(); i++) {
+		point1.x = v[i].x1;
+		point1.y = v[i].y1;
+		point2.x = v[i].x2;
+		point2.y = v[i].y2;
+		CPen pen;
+		pen.CreatePen(PS_SOLID, v[i].thickness, RGB(v[i].r, v[i].g, v[i].b));
+		memDC.SelectObject(pen);
+		if(v[i].type==1||v[i].type==2){
+			memDC.MoveTo(point1);
+			memDC.LineTo(point2);
+		}
+		else if(v[i].type==3){
+			memDC.Rectangle(point1.x, point1.y, point2.x, point2.y);
+		}
+		else if (v[i].type == 4) {
+			CPoint point3;
+			point3.x = point1.x;
+			point3.y = point2.y;
+			CPoint point4;
+			point4.x = point2.x;
+			point4.y = point1.y;
+			memDC.MoveTo(point1);
+			memDC.LineTo(point3);
+			memDC.LineTo(point4);
+			memDC.MoveTo(point2);
+			memDC.LineTo(point3);
+			memDC.LineTo(point4);
+		}
 	}
-	/////////////////////////////////
-
-
+	////
+	pDC->BitBlt(0, 0, pDoc->m_bmpinfo.bmWidth, pDoc->m_bmpinfo.bmHeight, &memDC, 0, 0, SRCCOPY);
+	ReleaseDC(&memDC);
 }
 
 void Capp4View::OnRButtonUp(UINT /* nFlags */, CPoint point)
@@ -140,7 +195,6 @@ int Capp4View::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;
 
 	// TODO:  여기에 특수화된 작성 코드를 추가합니다.
-
 	return 0;
 }
 
@@ -152,85 +206,14 @@ void Capp4View::OnDestroy()
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
 }
 
-
-//void Capp4View::OnMButtonDown(UINT nFlags, CPoint point)
-//{
-//	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-//
-//	CView::OnMButtonDown(nFlags, point);
-//}
-
-void Capp4View::bitmap_paint(Capp4Doc* pDoc, CPoint point) {
-	if (pDoc->m_file_path != "" && point.y < pDoc->m_height && point.x < pDoc->m_width) {
-		int px, py, nx, ny;
-		int dist_x, dist_y;
-		dist_x = abs(Previous_.x - point.x);
-		dist_y = abs(Previous_.y - point.y);
-		if (dist_x > dist_y) {
-			if (Previous_.x < point.x) {
-				px = Previous_.x;
-				py = Previous_.y;
-				nx = point.x;
-				ny = point.y;
-			}
-			else {
-				px = point.x;
-				py = point.y;
-				nx = Previous_.x;
-				ny = Previous_.y;
-			}
-			for (int x = px; x <= nx && x <= pDoc->m_width; x++) {
-				int y = (int)(((double)(ny - py) / (nx - px))*(x - px) + py);
-				pDoc->m_imagedata_ori[y * pDoc->m_step + x*pDoc->m_channels + 0] = pDoc->m_color_b;
-				pDoc->m_imagedata_ori[y * pDoc->m_step + x*pDoc->m_channels + 1] = pDoc->m_color_g;
-				pDoc->m_imagedata_ori[y * pDoc->m_step + x*pDoc->m_channels + 2] = pDoc->m_color_r;
-			}
-		}
-		else {
-			if (Previous_.y < point.y) {
-				px = Previous_.x;
-				py = Previous_.y;
-				nx = point.x;
-				ny = point.y;
-			}
-			else {
-				px = point.x;
-				py = point.y;
-				nx = Previous_.x;
-				ny = Previous_.y;
-			}
-			for (int y = py; y <= ny; y++) {
-				int x = (((y - py)*(nx - px)) / (ny - py)) + px;
-				pDoc->m_imagedata_ori[y*pDoc->m_step + x*pDoc->m_channels + 0] = pDoc->m_color_b;
-				pDoc->m_imagedata_ori[y*pDoc->m_step + x*pDoc->m_channels + 1] = pDoc->m_color_g;
-				pDoc->m_imagedata_ori[y*pDoc->m_step + x*pDoc->m_channels + 2] = pDoc->m_color_r;
-			}
-		}
-	}
-}
-
 void Capp4View::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 	
 	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
-	CClientDC dc(this);
-	if (pDoc->m_line_x == -1 && pDoc->m_line_y == -1) {
-		pDoc->m_line_x = point.x;
-		pDoc->m_line_y = point.y;
-	}
-	else {
-		CPoint temp;
-		temp.x = pDoc->m_line_x;
-		temp.y = pDoc->m_line_y;
-		dc.MoveTo(temp);
-		dc.LineTo(point);
-		pDoc->m_line_x = -1;
-		pDoc->m_line_y = -1;
-		//bitmap_paint(pDoc, point);
-	}
 	Previous_ = point;
-	pDoc->m_draw_check = true;
+	Start_ = point;
+	Invalidate();
 	CView::OnLButtonDown(nFlags, point);
 }
 
@@ -239,29 +222,45 @@ void Capp4View::OnMouseMove(UINT nFlags, CPoint point)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
-	if (pDoc->m_state == 1) {
-		if ((nFlags & MK_LBUTTON) == MK_LBUTTON) {
-			CClientDC dc(this);
-			CPen pen;
-			pen.CreatePen(PS_SOLID, 5, RGB(pDoc->m_color_r, pDoc->m_color_g, pDoc->m_color_b));
-			CPen* oldPen = dc.SelectObject(&pen);
-			dc.MoveTo(Previous_);
-			dc.LineTo(point);
-			//bitmap_paint(pDoc, point);
+	CClientDC dc(this);
+	if ((nFlags & MK_LBUTTON) == MK_LBUTTON) {
+		if (pDoc->m_state == 1) {
+			Draw_info draw;
+			draw.x1 = Previous_.x;
+			draw.y1 = Previous_.y;
+			draw.x2 = point.x;
+			draw.y2 = point.y;
+			draw.check = pDoc->m_vector_index;
+			draw.thickness = pDoc->m_thickness;
+			draw.r = pDoc->m_color_r;
+			draw.g = pDoc->m_color_g;
+			draw.b = pDoc->m_color_b;
+			draw.type = pDoc->m_state;
+			v.push_back(draw);
 			Previous_ = point;
-			pDoc->m_draw_check = true;
+			Invalidate(false);
+		}
+		else {
+			while (v.size() != 0 && v[v.size() - 1].check == pDoc->m_vector_index) {
+				v.pop_back();
+			}
+			Draw_info draw;
+			draw.x1 = Start_.x;
+			draw.y1 = Start_.y;
+			draw.x2 = point.x;
+			draw.y2 = point.y;
+			draw.check = pDoc->m_vector_index;
+			draw.thickness = pDoc->m_thickness;
+			draw.r = pDoc->m_color_r;
+			draw.g = pDoc->m_color_g;
+			draw.b = pDoc->m_color_b;
+			draw.type = pDoc->m_state;
+			v.push_back(draw);
+			Invalidate(false);
 		}
 	}
 	CView::OnMouseMove(nFlags, point);
 }
-
-
-//void Capp4View::OnLButtonDblClk(UINT nFlags, CPoint point)
-//{
-//	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-//	AfxMessageBox(_T("더블클릭이지"));
-//	CView::OnLButtonDblClk(nFlags, point);
-//}
 
 void Capp4View::OnInitialUpdate()
 {
@@ -274,7 +273,87 @@ void Capp4View::OnInitialUpdate()
 	}
 	else {
 		GetParentFrame()->SetWindowPos(NULL, 200, 200, pDoc->m_width<500?500: pDoc->m_width,220+ pDoc->m_height, SWP_NOZORDER);
+		v.clear();
+		while (!s.empty()) {
+			s.pop();
+		}
+		pDoc->m_vector_index = 1;
 	}
 
+	Invalidate();
+}
+
+
+void Capp4View::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	if (pDoc->m_state == 0)return;
+	if(pDoc->m_state==1){
+		Draw_info draw;
+		draw.x1 = Previous_.x;
+		draw.y1 = Previous_.y;
+		draw.x2 = point.x;
+		draw.y2 = point.y;
+		draw.check = pDoc->m_vector_index;
+		draw.thickness = pDoc->m_thickness;
+		draw.r = pDoc->m_color_r;
+		draw.g = pDoc->m_color_g;
+		draw.b = pDoc->m_color_b;
+		draw.type = pDoc->m_state;
+		v.push_back(draw);
+		pDoc->m_vector_index++;
+	}
+	else {
+		Draw_info draw;
+		draw.x1 = Start_.x;
+		draw.y1 = Start_.y;
+		draw.x2 = point.x;
+		draw.y2 = point.y;
+		draw.check = pDoc->m_vector_index;
+		draw.thickness = pDoc->m_thickness;
+		draw.r = pDoc->m_color_r;
+		draw.g = pDoc->m_color_g;
+		draw.b = pDoc->m_color_b;
+		draw.type = pDoc->m_state;
+		v.push_back(draw);
+		pDoc->m_vector_index++;
+	}
+	Invalidate(false);
+	
+	CView::OnLButtonUp(nFlags, point);
+}
+
+
+void Capp4View::OnEditUndo()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	bool check = false;
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	while (v.size() != 0 && v[v.size() - 1].check == pDoc->m_vector_index-1) {
+		check = true;
+		s.push(v[v.size() - 1]);
+		v.pop_back();
+	}
+	if (check) {
+		pDoc->m_vector_index--;
+	}
+	Invalidate();
+}
+
+
+void Capp4View::OnEditRedo()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	bool check = false;
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	while (!s.empty() && s.top().check == pDoc->m_vector_index){
+		check = true;
+		v.push_back(s.top());
+		s.pop();
+	}
+	if (check) {
+		pDoc->m_vector_index++;
+	}
 	Invalidate();
 }

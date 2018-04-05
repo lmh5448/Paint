@@ -110,8 +110,6 @@ BOOL Capp4App::InitInstance()
 	CCommandLineInfo cmdInfo;
 	ParseCommandLine(cmdInfo);
 
-
-
 	// 명령줄에 지정된 명령을 디스패치합니다.
 	// 응용 프로그램이 /RegServer, /Register, /Unregserver 또는 /Unregister로 시작된 경우 FALSE를 반환합니다.
 	if (!ProcessShellCommand(cmdInfo))
@@ -140,7 +138,7 @@ class CAboutDlg : public CDialogEx
 {
 public:
 	CAboutDlg();
-
+	/*HACCEL m_hAccel_redo;*/
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_ABOUTBOX };
@@ -154,6 +152,10 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 //	afx_msg void OnSize(UINT nType, int cx, int cy);
+//	afx_msg void OnEditUndo();
+//	afx_msg void OnEditRedo();
+	/*virtual BOOL OnInitDialog();*/
+	/*virtual BOOL PreTranslateMessage(MSG* pMsg);*/
 };
 
 CAboutDlg::CAboutDlg() : CDialogEx(IDD_ABOUTBOX)
@@ -167,6 +169,8 @@ void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
 //	ON_WM_SIZE()
+//ON_COMMAND(ID_EDIT_UNDO, &CAboutDlg::OnEditUndo)
+//ON_COMMAND(ID_EDIT_REDO, &CAboutDlg::OnEditRedo)
 END_MESSAGE_MAP()
 
 // 대화 상자를 실행하기 위한 응용 프로그램 명령입니다.
@@ -189,6 +193,8 @@ void Capp4App::PreLoadState()
 
 void Capp4App::LoadCustomState()
 {
+	__super::LoadCustomState();
+	GetKeyboardManager()->ResetAll();
 }
 
 void Capp4App::SaveCustomState()
@@ -219,4 +225,48 @@ void Capp4App::SaveCustomState()
 //	}
 //
 //	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
+//}
+
+
+//void CAboutDlg::OnEditUndo()
+//{
+//	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+//	Capp4View* pView = (Capp4View*)((CMainFrame*)AfxGetMainWnd())->GetActiveView();
+//	Capp4Doc* pDoc = (Capp4Doc*)((CMainFrame*)AfxGetMainWnd())->GetActiveView();
+//	AfxMessageBox(_T("된다1"));
+//	pView->OnEditUndo();
+//}
+
+
+//void CAboutDlg::OnEditRedo()
+//{
+//	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+//	Capp4View* pView = (Capp4View*)((CMainFrame*)AfxGetMainWnd())->GetActiveView();
+//	AfxMessageBox(_T("된다2"));
+//	pView->OnEditRedo();
+//}
+
+
+//BOOL CAboutDlg::OnInitDialog()
+//{
+//	CDialogEx::OnInitDialog();
+//
+//	// TODO:  여기에 추가 초기화 작업을 추가합니다.
+//
+//	m_hAccel_redo = ::LoadAccelerators(AfxGetInstanceHandle(), MAKEINTRESOURCE(ID_EDIT_REDO));
+//
+//	return TRUE;  // return TRUE unless you set the focus to a control
+//				  // 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
+//}
+
+
+//BOOL CAboutDlg::PreTranslateMessage(MSG* pMsg)
+//{
+//	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
+//	if (m_hAccel_redo != NULL) {
+//		if (TranslateAccelerator(m_hWnd, m_hAccel_redo, pMsg)) {
+//			return true;
+//		}
+//	}
+//	return CDialogEx::PreTranslateMessage(pMsg);
 //}

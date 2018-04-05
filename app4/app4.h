@@ -29,7 +29,6 @@ class Capp4App : public CWinAppEx
 public:
 	Capp4App();
 
-
 // 재정의입니다.
 public:
 	virtual BOOL InitInstance();

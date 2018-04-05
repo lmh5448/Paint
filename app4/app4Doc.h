@@ -14,7 +14,6 @@
 
 #pragma once
 
-
 class Capp4Doc : public CDocument
 {
 protected: // serialization에서만 만들어집니다.
@@ -23,6 +22,11 @@ protected: // serialization에서만 만들어집니다.
 
 // 특성입니다.
 public:
+	CBitmap m_Cbitmap;
+	CBitmap m_Cbitmap_ori;
+	BITMAP m_bmpinfo;
+	HBITMAP m_Hbitmap;
+	////////////////////////////////
 	CString m_file_path;
 	BITMAPFILEHEADER m_file_header;
 	BITMAPINFOHEADER m_info_header;
@@ -39,15 +43,14 @@ public:
 	int m_brightless;
 	BOOL *m_filter_check = new BOOL[10];
 	int m_filter_size = 10;
-	//1-연필, 2-선분, 3-사각형, 4-동그라미
+	//1-연필, 2-선분, 3-사각형, 4-채우기 사각형, 5-동그라미
 	int m_state = 0;
-	int m_line_x=-1;
-	int m_line_y=-1;
+	int m_vector_index = 1;
 	int m_color_r=0;
 	int m_color_g=0;
 	int m_color_b=0;
+	int m_thickness = 5;
 	double m_gamma = 1.0;
-	BOOL m_draw_check = false;
 // 작업입니다.
 public:
 

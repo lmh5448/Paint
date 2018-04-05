@@ -59,10 +59,16 @@ public:
 //	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
 //	afx_msg void OnSize(UINT nType, int cx, int cy);
 //	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
-	afx_msg void OnCombo2();
-	afx_msg void OnUpdateCombo2(CCmdUI *pCmdUI);
+	//afx_msg void OnCombo2();
+	//afx_msg void OnUpdateCombo2(CCmdUI *pCmdUI);
 	afx_msg void OnCombo3();
 	afx_msg void OnUpdateCombo3(CCmdUI *pCmdUI);
+	afx_msg void OnCombo4();
+	afx_msg void OnUpdateCombo4(CCmdUI *pCmdUI);
+	afx_msg void OnButton7();
+	afx_msg void OnButton8();
+	afx_msg void OnUpdateButton7(CCmdUI *pCmdUI);
+	afx_msg void OnUpdateButton8(CCmdUI *pCmdUI);
 };
 
 
