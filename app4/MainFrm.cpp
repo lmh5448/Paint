@@ -35,7 +35,6 @@ ON_UPDATE_COMMAND_UI(ID_COMBO3, &CMainFrame::OnUpdateCombo3)
 ON_COMMAND(ID_COMBO4, &CMainFrame::OnCombo4)
 ON_UPDATE_COMMAND_UI(ID_COMBO4, &CMainFrame::OnUpdateCombo4)
 ON_COMMAND(ID_BUTTON7, &CMainFrame::OnButton7)
-ON_UPDATE_COMMAND_UI(ID_BUTTON7, &CMainFrame::OnUpdateButton7)
 ON_COMMAND(ID_BUTTON8, &CMainFrame::OnButton8)
 ON_UPDATE_COMMAND_UI(ID_BUTTON8, &CMainFrame::OnUpdateButton8)
 END_MESSAGE_MAP()
@@ -81,9 +80,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	pComboBox->AddItem(CA2W("5"));
 	pComboBox->OnSelectItem(4);
 
-	/*CMFCColorButton* pColorButton = DYNAMIC_DOWNCAST(CMFCColorButton, m_wndRibbonBar.FindByID(ID_BUTTON7));
-	pColorButton->SetColor(COLORREF(RGB(0,0,0)));
-*/
+
 	CString strTitlePane1;
 	CString strTitlePane2;
 	bNameValid = strTitlePane1.LoadString(IDS_STATUS_PANE1);
@@ -307,30 +304,34 @@ void CMainFrame::OnButton7()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
 	Capp4Doc* pDoc = (Capp4Doc*)GetActiveDocument();
-	CMFCColorButton* pColorButton = DYNAMIC_DOWNCAST(CMFCColorButton,m_wndRibbonBar.FindByID(ID_BUTTON7));
-	//CMFCColorButton* pColorButton = new CMFCColorButton();
+	CMFCRibbonColorButton* pColorButton = DYNAMIC_DOWNCAST(CMFCRibbonColorButton, m_wndRibbonBar.FindByID(ID_BUTTON7));
 	COLORREF color = pColorButton->GetColor();
 	pDoc->m_color_r = GetRValue(color);
 	pDoc->m_color_g = GetGValue(color);
 	pDoc->m_color_b = GetBValue(color);
 }
 
-void CMainFrame::OnUpdateButton7(CCmdUI *pCmdUI)
-{
-	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
-	CMFCRibbonComboBox* pComboBox = DYNAMIC_DOWNCAST(CMFCRibbonComboBox, m_wndRibbonBar.FindByID(ID_BUTTON7));
-	Capp4Doc* pDoc = (Capp4Doc*)GetActiveDocument();
-	COLORREF color = RGB(pDoc->m_color_r, pDoc->m_color_g, pDoc->m_color_b);
-}
-
 void CMainFrame::OnButton8()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	CMFCColorButton* pColorButton = DYNAMIC_DOWNCAST(CMFCColorButton, m_wndRibbonBar.FindByID(ID_BUTTON8));
+	Capp4Doc* pDoc = (Capp4Doc*)GetActiveDocument();
+	pDoc->m_brush_check = !pDoc->m_brush_check;
+	CMFCRibbonColorButton* pColorButton = DYNAMIC_DOWNCAST(CMFCRibbonColorButton, m_wndRibbonBar.FindByID(ID_BUTTON8));
+	COLORREF color = pColorButton->GetColor();
+	pDoc->m_brush_color_r = GetRValue(color);
+	pDoc->m_brush_color_g = GetGValue(color);
+	pDoc->m_brush_color_b = GetBValue(color);
 }
+
 
 void CMainFrame::OnUpdateButton8(CCmdUI *pCmdUI)
 {
 	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
-
+	Capp4Doc* pDoc = (Capp4Doc*)GetActiveDocument();
+	if (pDoc->m_brush_check) {
+		pCmdUI->SetCheck(true);
+	}
+	else {
+		pCmdUI->SetCheck(false);
+	}
 }

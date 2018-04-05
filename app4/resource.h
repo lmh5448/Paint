@@ -40,7 +40,6 @@
 #define ID_BUTTON2                      32772
 #define ID_paint_line                   32772
 #define ID_BUTTON3                      32773
-#define ID_BUTTON_RECT                  32773
 #define ID_BUTTON4                      32774
 #define ID_BUTTON5                      32775
 #define ID_BUTTON6                      32776
@@ -52,19 +51,23 @@
 #define ID_brightless                   32785
 #define ID_BUTTON14                     32795
 #define ID_paint_segment                32796
-#define ID_COMBO2                       32797
 #define ID_CHECK2                       32798
 #define ID_COMBO3                       32799
 #define ID_COMBO4                       32800
 #define ID_BUTTON7                      32808
 #define ID_BUTTON8                      32809
+#define ID_BUTTON9                      32810
+#define ID_BUTTON10                     32811
+#define ID_BUTTON12                     32814
+#define ID_BUTTON13                     32815
+#define ID_BUTTON15                     32816
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        317
-#define _APS_NEXT_COMMAND_VALUE         32810
+#define _APS_NEXT_COMMAND_VALUE         32817
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           310
 #endif

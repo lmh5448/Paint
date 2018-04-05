@@ -43,12 +43,16 @@ public:
 	int m_brightless;
 	BOOL *m_filter_check = new BOOL[10];
 	int m_filter_size = 10;
-	//1-연필, 2-선분, 3-사각형, 4-채우기 사각형, 5-동그라미
+	//1-연필, 2-선분, 3-사각형, 4-동그라미, 5-다각형
 	int m_state = 0;
 	int m_vector_index = 1;
 	int m_color_r=0;
 	int m_color_g=0;
 	int m_color_b=0;
+	BOOL m_brush_check = false;
+	int m_brush_color_r = 0;
+	int m_brush_color_g = 0;
+	int m_brush_color_b = 0;
 	int m_thickness = 5;
 	double m_gamma = 1.0;
 // 작업입니다.
@@ -109,4 +113,12 @@ public:
 	afx_msg void OnUpdatepaintsegment(CCmdUI *pCmdUI);
 	afx_msg void OnCheck2();
 	afx_msg void OnUpdateCheck2(CCmdUI *pCmdUI);
+	afx_msg void OnButton12();
+	afx_msg void OnUpdateButton12(CCmdUI *pCmdUI);
+	afx_msg void OnButton13();
+	afx_msg void OnUpdateButton13(CCmdUI *pCmdUI);
+	afx_msg void OnButton14();
+	afx_msg void OnUpdateButton14(CCmdUI *pCmdUI);
+	afx_msg void OnButton15();
+	afx_msg void OnUpdateButton15(CCmdUI *pCmdUI);
 };

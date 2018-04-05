@@ -55,6 +55,14 @@ BEGIN_MESSAGE_MAP(Capp4Doc, CDocument)
 	ON_UPDATE_COMMAND_UI(ID_paint_segment, &Capp4Doc::OnUpdatepaintsegment)
 	ON_COMMAND(ID_CHECK2, &Capp4Doc::OnCheck2)
 	ON_UPDATE_COMMAND_UI(ID_CHECK2, &Capp4Doc::OnUpdateCheck2)
+	ON_COMMAND(ID_BUTTON12, &Capp4Doc::OnButton12)
+	ON_UPDATE_COMMAND_UI(ID_BUTTON12, &Capp4Doc::OnUpdateButton12)
+	ON_COMMAND(ID_BUTTON13, &Capp4Doc::OnButton13)
+	ON_UPDATE_COMMAND_UI(ID_BUTTON13, &Capp4Doc::OnUpdateButton13)
+	ON_COMMAND(ID_BUTTON14, &Capp4Doc::OnButton14)
+	ON_UPDATE_COMMAND_UI(ID_BUTTON14, &Capp4Doc::OnUpdateButton14)
+	ON_COMMAND(ID_BUTTON15, &Capp4Doc::OnButton15)
+	ON_UPDATE_COMMAND_UI(ID_BUTTON15, &Capp4Doc::OnUpdateButton15)
 END_MESSAGE_MAP()
 
 
@@ -677,4 +685,80 @@ void Capp4Doc::OnUpdateCheck2(CCmdUI *pCmdUI)
 {
 	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
 	pCmdUI->SetCheck(m_filter_check[5]);
+}
+
+
+void Capp4Doc::OnButton12()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	m_state = m_state == 3 ? 0 : 3;
+}
+
+
+void Capp4Doc::OnUpdateButton12(CCmdUI *pCmdUI)
+{
+	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
+	if (m_state == 3) {
+		pCmdUI->SetCheck(true);
+	}
+	else {
+		pCmdUI->SetCheck(false);
+	}
+}
+
+
+void Capp4Doc::OnButton13()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	m_state = m_state == 4 ? 0 : 4;
+}
+
+
+void Capp4Doc::OnUpdateButton13(CCmdUI *pCmdUI)
+{
+	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
+	if (m_state == 4) {
+		pCmdUI->SetCheck(true);
+	}
+	else {
+		pCmdUI->SetCheck(false);
+	}
+}
+
+
+void Capp4Doc::OnButton14()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	m_state = m_state == 5 ? 0 : 5;
+}
+
+
+void Capp4Doc::OnUpdateButton14(CCmdUI *pCmdUI)
+{
+	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
+	if (m_state == 5) {
+		pCmdUI->SetCheck(true);
+	}
+	else {
+		pCmdUI->SetCheck(false);
+	}
+}
+
+
+void Capp4Doc::OnButton15()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	m_state = m_state == 6 ? 0 : 6;
+}
+
+
+void Capp4Doc::OnUpdateButton15(CCmdUI *pCmdUI)
+{
+	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
+	if (m_state == 6) {
+		pCmdUI->SetCheck(true);
+	}
+	else {
+		pCmdUI->SetCheck(false);
+	}
 }

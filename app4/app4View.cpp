@@ -40,6 +40,11 @@ struct Draw_info
 	int b;
 
 	int type;
+
+	BOOL brush_check;
+	int brush_r;
+	int brush_g;
+	int brush_b;
 };
 
 vector<Draw_info> v;
@@ -122,9 +127,15 @@ void Capp4View::OnDraw(CDC* pDC)
 		point2.x = v[i].x2;
 		point2.y = v[i].y2;
 		CPen pen;
+		CBrush brush(RGB(v[i].brush_r, v[i].brush_g, v[i].brush_b));
 		pen.CreatePen(PS_SOLID, v[i].thickness, RGB(v[i].r, v[i].g, v[i].b));
 		memDC.SelectObject(pen);
-		if(v[i].type==1||v[i].type==2){
+		//채우기 설정
+		if (v[i].brush_check) { memDC.SelectObject(brush); }
+		else { memDC.SelectStockObject(NULL_BRUSH); }
+
+		//도형그리기
+		if(v[i].type==1 || v[i].type==2 || v[i].type==6){
 			memDC.MoveTo(point1);
 			memDC.LineTo(point2);
 		}
@@ -132,19 +143,13 @@ void Capp4View::OnDraw(CDC* pDC)
 			memDC.Rectangle(point1.x, point1.y, point2.x, point2.y);
 		}
 		else if (v[i].type == 4) {
-			CPoint point3;
-			point3.x = point1.x;
-			point3.y = point2.y;
-			CPoint point4;
-			point4.x = point2.x;
-			point4.y = point1.y;
-			memDC.MoveTo(point1);
-			memDC.LineTo(point3);
-			memDC.LineTo(point4);
-			memDC.MoveTo(point2);
-			memDC.LineTo(point3);
-			memDC.LineTo(point4);
+			memDC.Ellipse(point1.x, point1.y, point2.x, point2.y);
 		}
+		else if (v[i].type == 5) {
+
+		}
+		pen.DeleteObject();
+		brush.DeleteObject();
 	}
 	////
 	pDC->BitBlt(0, 0, pDoc->m_bmpinfo.bmWidth, pDoc->m_bmpinfo.bmHeight, &memDC, 0, 0, SRCCOPY);
@@ -209,7 +214,6 @@ void Capp4View::OnDestroy()
 void Capp4View::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-	
 	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
 	Previous_ = point;
 	Start_ = point;
@@ -224,6 +228,7 @@ void Capp4View::OnMouseMove(UINT nFlags, CPoint point)
 	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
 	CClientDC dc(this);
 	if ((nFlags & MK_LBUTTON) == MK_LBUTTON) {
+		if (pDoc->m_state == 0)return;
 		if (pDoc->m_state == 1) {
 			Draw_info draw;
 			draw.x1 = Previous_.x;
@@ -236,6 +241,30 @@ void Capp4View::OnMouseMove(UINT nFlags, CPoint point)
 			draw.g = pDoc->m_color_g;
 			draw.b = pDoc->m_color_b;
 			draw.type = pDoc->m_state;
+			draw.brush_check = pDoc->m_brush_check;
+			draw.brush_r = pDoc->m_brush_color_r;
+			draw.brush_g = pDoc->m_brush_color_g;
+			draw.brush_b = pDoc->m_brush_color_b;
+			v.push_back(draw);
+			Previous_ = point;
+			Invalidate(false);
+		}
+		else if (pDoc->m_state == 6) {
+			Draw_info draw;
+			draw.x1 = Previous_.x;
+			draw.y1 = Previous_.y;
+			draw.x2 = point.x;
+			draw.y2 = point.y;
+			draw.check = pDoc->m_vector_index;
+			draw.thickness = pDoc->m_thickness*5;
+			draw.r = 255;
+			draw.g = 255;
+			draw.b = 255;
+			draw.type = pDoc->m_state;
+			draw.brush_check = pDoc->m_brush_check;
+			draw.brush_r = 255;
+			draw.brush_g = 255;
+			draw.brush_b = 255;
 			v.push_back(draw);
 			Previous_ = point;
 			Invalidate(false);
@@ -255,12 +284,89 @@ void Capp4View::OnMouseMove(UINT nFlags, CPoint point)
 			draw.g = pDoc->m_color_g;
 			draw.b = pDoc->m_color_b;
 			draw.type = pDoc->m_state;
+			draw.brush_check = pDoc->m_brush_check;
+			draw.brush_r = pDoc->m_brush_color_r;
+			draw.brush_g = pDoc->m_brush_color_g;
+			draw.brush_b = pDoc->m_brush_color_b;
 			v.push_back(draw);
 			Invalidate(false);
 		}
 	}
 	CView::OnMouseMove(nFlags, point);
 }
+
+
+void Capp4View::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	if (pDoc->m_state == 0)return;
+	if (pDoc->m_state == 1) {
+		Draw_info draw;
+		draw.x1 = Previous_.x;
+		draw.y1 = Previous_.y;
+		draw.x2 = point.x;
+		draw.y2 = point.y;
+		draw.check = pDoc->m_vector_index;
+		draw.thickness = pDoc->m_thickness;
+		draw.r = pDoc->m_color_r;
+		draw.g = pDoc->m_color_g;
+		draw.b = pDoc->m_color_b;
+		draw.type = pDoc->m_state;
+		draw.brush_check = pDoc->m_brush_check;
+		draw.brush_r = pDoc->m_brush_color_r;
+		draw.brush_g = pDoc->m_brush_color_g;
+		draw.brush_b = pDoc->m_brush_color_b;
+		v.push_back(draw);
+		pDoc->m_vector_index++;
+	}
+	else if (pDoc->m_state == 6) {
+		Draw_info draw;
+		draw.x1 = Previous_.x;
+		draw.y1 = Previous_.y;
+		draw.x2 = point.x;
+		draw.y2 = point.y;
+		draw.check = pDoc->m_vector_index;
+		draw.thickness = pDoc->m_thickness*5;
+		draw.r = 255;
+		draw.g = 255;
+		draw.b = 255;
+		draw.type = pDoc->m_state;
+		draw.brush_check = pDoc->m_brush_check;
+		draw.brush_r = 255;
+		draw.brush_g = 255;
+		draw.brush_b = 255;
+		v.push_back(draw);
+		pDoc->m_vector_index++;
+	}
+	else {
+		Draw_info draw;
+		draw.x1 = Start_.x;
+		draw.y1 = Start_.y;
+		draw.x2 = point.x;
+		draw.y2 = point.y;
+		draw.check = pDoc->m_vector_index;
+		draw.thickness = pDoc->m_thickness;
+		draw.r = pDoc->m_color_r;
+		draw.g = pDoc->m_color_g;
+		draw.b = pDoc->m_color_b;
+		draw.type = pDoc->m_state;
+		draw.brush_check = pDoc->m_brush_check;
+		draw.brush_r = pDoc->m_brush_color_r;
+		draw.brush_g = pDoc->m_brush_color_g;
+		draw.brush_b = pDoc->m_brush_color_b;
+		v.push_back(draw);
+		pDoc->m_vector_index++;
+	}
+	Invalidate(false);
+
+	while (!s.empty()) {
+		s.pop();
+	}
+
+	CView::OnLButtonUp(nFlags, point);
+}
+
 
 void Capp4View::OnInitialUpdate()
 {
@@ -281,51 +387,6 @@ void Capp4View::OnInitialUpdate()
 	}
 
 	Invalidate();
-}
-
-
-void Capp4View::OnLButtonUp(UINT nFlags, CPoint point)
-{
-	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
-	if (pDoc->m_state == 0)return;
-	if(pDoc->m_state==1){
-		Draw_info draw;
-		draw.x1 = Previous_.x;
-		draw.y1 = Previous_.y;
-		draw.x2 = point.x;
-		draw.y2 = point.y;
-		draw.check = pDoc->m_vector_index;
-		draw.thickness = pDoc->m_thickness;
-		draw.r = pDoc->m_color_r;
-		draw.g = pDoc->m_color_g;
-		draw.b = pDoc->m_color_b;
-		draw.type = pDoc->m_state;
-		v.push_back(draw);
-		pDoc->m_vector_index++;
-	}
-	else {
-		Draw_info draw;
-		draw.x1 = Start_.x;
-		draw.y1 = Start_.y;
-		draw.x2 = point.x;
-		draw.y2 = point.y;
-		draw.check = pDoc->m_vector_index;
-		draw.thickness = pDoc->m_thickness;
-		draw.r = pDoc->m_color_r;
-		draw.g = pDoc->m_color_g;
-		draw.b = pDoc->m_color_b;
-		draw.type = pDoc->m_state;
-		v.push_back(draw);
-		pDoc->m_vector_index++;
-	}
-	Invalidate(false);
-
-	while (!s.empty()) {
-		s.pop();
-	}
-
-	CView::OnLButtonUp(nFlags, point);
 }
 
 
