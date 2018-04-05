@@ -320,7 +320,11 @@ void Capp4View::OnLButtonUp(UINT nFlags, CPoint point)
 		pDoc->m_vector_index++;
 	}
 	Invalidate(false);
-	
+
+	while (!s.empty()) {
+		s.pop();
+	}
+
 	CView::OnLButtonUp(nFlags, point);
 }
 
