@@ -72,14 +72,14 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;      // 만들지 못했습니다.
 	}
 
-	CMFCRibbonComboBox* pComboBox = DYNAMIC_DOWNCAST(CMFCRibbonComboBox, m_wndRibbonBar.FindByID(ID_COMBO2));
+	/*CMFCRibbonComboBox* pComboBox = DYNAMIC_DOWNCAST(CMFCRibbonComboBox, m_wndRibbonBar.FindByID(ID_COMBO2));
 	pComboBox->AddItem(CA2W("검정"));
 	pComboBox->AddItem(CA2W("빨강"));
 	pComboBox->AddItem(CA2W("초록"));
 	pComboBox->AddItem(CA2W("파랑"));
-	pComboBox->OnSelectItem(0);
+	pComboBox->OnSelectItem(0);*/
 
-	pComboBox = DYNAMIC_DOWNCAST(CMFCRibbonComboBox, m_wndRibbonBar.FindByID(ID_COMBO3));
+	CMFCRibbonComboBox* pComboBox = DYNAMIC_DOWNCAST(CMFCRibbonComboBox, m_wndRibbonBar.FindByID(ID_COMBO3));
 	pComboBox->AddItem(CA2W("1"));
 	pComboBox->AddItem(CA2W("2.5"));
 	pComboBox->AddItem(CA2W("1/2.5"));
