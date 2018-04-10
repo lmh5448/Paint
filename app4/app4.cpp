@@ -167,6 +167,7 @@ void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 	CDialogEx::DoDataExchange(pDX);
 }
 
+
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
 //	ON_WM_SIZE()
 //ON_COMMAND(ID_EDIT_UNDO, &CAboutDlg::OnEditUndo)

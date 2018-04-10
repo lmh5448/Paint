@@ -25,7 +25,6 @@ public:
 	CBitmap m_Cbitmap;
 	CBitmap m_Cbitmap_ori;
 	BITMAP m_bmpinfo;
-	HBITMAP m_Hbitmap;
 	////////////////////////////////
 	CString m_file_path;
 	BITMAPFILEHEADER m_file_header;
@@ -33,17 +32,17 @@ public:
 	BYTE* m_imagedata;
 	BYTE* m_imagedata_ori;
 	BYTE* m_imagedata_temp;
-	int m_size;
 	int m_imagedata_size;
 	int m_channels;
 	int m_width;
 	int m_height;
 	int m_step;
+	BOOL m_bright_check = false;
+	BOOL m_brightless_check = false;
 	int m_bright;
 	int m_brightless;
-	BOOL *m_filter_check = new BOOL[10];
 	int m_filter_size = 10;
-	//1-연필, 2-선분, 3-사각형, 4-동그라미, 5-다각형
+	//1-연필, 2-선분, 3-사각형, 4-동그라미, 5-다각형, 6-지우개, 7-색채우기
 	int m_state = 0;
 	int m_vector_index = 1;
 	int m_color_r=0;
@@ -54,13 +53,14 @@ public:
 	int m_brush_color_g = 0;
 	int m_brush_color_b = 0;
 	int m_thickness = 5;
+	BOOL m_gamma_check = false;
 	double m_gamma = 1.0;
 // 작업입니다.
 public:
 
 // 재정의입니다.
 public:
-	virtual BOOL OnNewDocument();
+	//virtual BOOL OnNewDocument();
 	virtual void Serialize(CArchive& ar);
 #ifdef SHARED_HANDLERS
 	virtual void InitializeSearchContent();
@@ -70,6 +70,7 @@ public:
 // 구현입니다.
 public:
 	virtual ~Capp4Doc();
+	BOOL OnNewDocument();
 #ifdef _DEBUG
 	virtual void AssertValid() const;
 	virtual void Dump(CDumpContext& dc) const;
@@ -88,21 +89,15 @@ protected:
 public:
 	virtual BOOL OnOpenDocument(LPCTSTR lpszPathName);
 	virtual BOOL OnSaveDocument(LPCTSTR lpszPathName);
-	afx_msg void OnButtonR();
-	afx_msg void OnButtonG();
-	afx_msg void OnButtonB();
-	afx_msg void OnButtonSave();
-	afx_msg void Filter();
 	afx_msg void Filter_avg();
 	afx_msg void Filter_auto_contrast();
 	afx_msg void Filter_bright();
 	afx_msg void Filter_brightless();
 	afx_msg void Filter_gamma();
 	afx_msg void Filter_histogram();
-	afx_msg void Onavgfilter();
-	afx_msg void OnUpdateavgfilter(CCmdUI *pCmdUI);
-	afx_msg void Onautocontrast();
-	afx_msg void OnUpdateautocontrast(CCmdUI *pCmdUI);
+	//사용안한다 기능은 똑같지만 속도차이가 어마어마함 -> ExtFloodFill FLOODFILLSURFACE
+	//afx_msg void MyFloodFill(int x, int y, BYTE nr, BYTE ng, BYTE nb);
+	COLORREF GetRGB(int x,int y);
 	afx_msg void Onbright();
 	afx_msg void OnUpdatebright(CCmdUI *pCmdUI);
 	afx_msg void Onbrightless();
@@ -111,8 +106,6 @@ public:
 	afx_msg void OnUpdatepaintline(CCmdUI *pCmdUI);
 	afx_msg void Onpaintsegment();
 	afx_msg void OnUpdatepaintsegment(CCmdUI *pCmdUI);
-	afx_msg void OnCheck2();
-	afx_msg void OnUpdateCheck2(CCmdUI *pCmdUI);
 	afx_msg void OnButton12();
 	afx_msg void OnUpdateButton12(CCmdUI *pCmdUI);
 	afx_msg void OnButton13();
@@ -121,4 +114,10 @@ public:
 	afx_msg void OnUpdateButton14(CCmdUI *pCmdUI);
 	afx_msg void OnButton15();
 	afx_msg void OnUpdateButton15(CCmdUI *pCmdUI);
+	afx_msg void OnButton16();
+	afx_msg void OnUpdateButton16(CCmdUI *pCmdUI);
+	afx_msg void OnSaveR();
+	afx_msg void OnSaveG();
+	afx_msg void OnSaveB();
+	afx_msg void OnSaveOnfile();
 };

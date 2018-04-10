@@ -23,10 +23,23 @@
 
 #include <propkey.h>
 #include <cmath>
+#include <queue>
 #include"app4View.h"
 #include"MainFrm.h"
 
 #define CLIP(x) ((x>255 )? 255 : (x<0 ? 0 : x))
+
+using namespace std;
+
+struct Pair
+{
+	int x;
+	int y;
+	Pair(int x1, int y1) {
+		x = x1;
+		y = y1;
+	}
+};
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -37,14 +50,6 @@
 IMPLEMENT_DYNCREATE(Capp4Doc, CDocument)
 
 BEGIN_MESSAGE_MAP(Capp4Doc, CDocument)
-	ON_COMMAND(ID_BUTTON3, &Capp4Doc::OnButtonR)
-	ON_COMMAND(ID_BUTTON4, &Capp4Doc::OnButtonG)
-	ON_COMMAND(ID_BUTTON5, &Capp4Doc::OnButtonB)
-	ON_COMMAND(ID_BUTTON6, &Capp4Doc::OnButtonSave)
-	ON_COMMAND(ID_avg_filter, &Capp4Doc::Onavgfilter)
-	ON_UPDATE_COMMAND_UI(ID_avg_filter, &Capp4Doc::OnUpdateavgfilter)
-	ON_COMMAND(ID_auto_contrast, &Capp4Doc::Onautocontrast)
-	ON_UPDATE_COMMAND_UI(ID_auto_contrast, &Capp4Doc::OnUpdateautocontrast)
 	ON_COMMAND(ID_bright, &Capp4Doc::Onbright)
 	ON_UPDATE_COMMAND_UI(ID_bright, &Capp4Doc::OnUpdatebright)
 	ON_COMMAND(ID_brightless, &Capp4Doc::Onbrightless)
@@ -53,8 +58,6 @@ BEGIN_MESSAGE_MAP(Capp4Doc, CDocument)
 	ON_UPDATE_COMMAND_UI(ID_paint_line, &Capp4Doc::OnUpdatepaintline)
 	ON_COMMAND(ID_paint_segment, &Capp4Doc::Onpaintsegment)
 	ON_UPDATE_COMMAND_UI(ID_paint_segment, &Capp4Doc::OnUpdatepaintsegment)
-	ON_COMMAND(ID_CHECK2, &Capp4Doc::OnCheck2)
-	ON_UPDATE_COMMAND_UI(ID_CHECK2, &Capp4Doc::OnUpdateCheck2)
 	ON_COMMAND(ID_BUTTON12, &Capp4Doc::OnButton12)
 	ON_UPDATE_COMMAND_UI(ID_BUTTON12, &Capp4Doc::OnUpdateButton12)
 	ON_COMMAND(ID_BUTTON13, &Capp4Doc::OnButton13)
@@ -63,6 +66,12 @@ BEGIN_MESSAGE_MAP(Capp4Doc, CDocument)
 	ON_UPDATE_COMMAND_UI(ID_BUTTON14, &Capp4Doc::OnUpdateButton14)
 	ON_COMMAND(ID_BUTTON15, &Capp4Doc::OnButton15)
 	ON_UPDATE_COMMAND_UI(ID_BUTTON15, &Capp4Doc::OnUpdateButton15)
+	ON_COMMAND(ID_BUTTON16, &Capp4Doc::OnButton16)
+	ON_UPDATE_COMMAND_UI(ID_BUTTON16, &Capp4Doc::OnUpdateButton16)
+	ON_COMMAND(ID_SAVE_R, &Capp4Doc::OnSaveR)
+	ON_COMMAND(ID_SAVE_G, &Capp4Doc::OnSaveG)
+	ON_COMMAND(ID_SAVE_B, &Capp4Doc::OnSaveB)
+	ON_COMMAND(ID_SAVE_ONFILE, &Capp4Doc::OnSaveOnfile)
 END_MESSAGE_MAP()
 
 
@@ -88,8 +97,6 @@ BOOL Capp4Doc::OnNewDocument()
 
 	return TRUE;
 }
-
-
 
 
 // Capp4Doc serialization
@@ -187,7 +194,6 @@ BOOL Capp4Doc::OnOpenDocument(LPCTSTR lpszPathName)
 	CFile File;
 	m_file_path = lpszPathName;
 	File.Open(m_file_path, CFile::modeRead | CFile::typeBinary);
-	m_size = File.GetLength();
 	File.Read(&m_file_header, sizeof(BITMAPFILEHEADER));
 	if (m_file_header.bfType != 0x4D42) {
 		File.Close();
@@ -200,24 +206,21 @@ BOOL Capp4Doc::OnOpenDocument(LPCTSTR lpszPathName)
 	m_width = m_info_header.biWidth;
 	m_step = (m_width*m_channels + 3)&~3;
 	m_imagedata_size = m_height * m_step;
+	free(m_imagedata);
+	free(m_imagedata_temp);
+	free(m_imagedata_ori);
 	m_imagedata = new BYTE[m_imagedata_size];
 	m_imagedata_temp = new BYTE[m_imagedata_size];
-	int r;
-	for (r = m_height - 1; r >= 0; r--) {
-		File.Read(&m_imagedata[r*m_step], m_step);
-	}
+
+	File.Read(m_imagedata, m_imagedata_size);
 
 	m_imagedata_ori = new BYTE[m_imagedata_size];
 	memcpy(m_imagedata_ori, m_imagedata, m_imagedata_size);
 	File.Close();
-	for (int i = 0; i < m_filter_size; i++) {
-		m_filter_check[i] = false;
-	}
 	m_bright = 0;
 	m_brightless = 0;
 
 	//////////////////////////////////
-	Capp4View* pView = (Capp4View*)((CMainFrame*)AfxGetMainWnd())->GetActiveView();
 	HANDLE handle = ::LoadImage(AfxGetInstanceHandle(), lpszPathName, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_LOADMAP3DCOLORS);
 	if (!handle) {
 		return false;
@@ -241,7 +244,7 @@ BOOL Capp4Doc::OnOpenDocument(LPCTSTR lpszPathName)
 BOOL Capp4Doc::OnSaveDocument(LPCTSTR lpszPathName)
 {
 	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
-	if (m_file_path == "")return false;
+	m_file_path = lpszPathName;
 	CFile File;
 	CFileDialog SaveDlg(FALSE, _T("BMP"), NULL, OFN_HIDEREADONLY);
 
@@ -257,10 +260,11 @@ BOOL Capp4Doc::OnSaveDocument(LPCTSTR lpszPathName)
 			}
 		}
 
-		int r;
-		for (r = m_height - 1; r >= 0; r--) {
-			File.Write(&m_imagedata[r*m_step], m_step);
-		}
+		BITMAPINFO info_header;
+		info_header.bmiHeader = m_info_header;
+		HDC dc = GetDC(NULL);
+		GetDIBits(dc, m_Cbitmap, 0, m_height, m_imagedata, &info_header, DIB_RGB_COLORS);
+		File.Write(m_imagedata, m_imagedata_size);
 		File.Close();
 	}
 
@@ -268,180 +272,6 @@ BOOL Capp4Doc::OnSaveDocument(LPCTSTR lpszPathName)
 }
 
 
-void Capp4Doc::OnButtonR()
-{
-	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	if (m_file_path == "")return;
-	CFile File;
-	int index = 0;
-	for (int i = m_file_path.GetLength() - 1; i >= 0; i--) {
-		if (m_file_path[i] == '.') {
-			index = i;
-			break;
-		}
-	}
-	CString filename = m_file_path.Mid(index);
-	File.Open(m_file_path.Left(index) + "_r" + filename, CFile::modeWrite | CFile::modeCreate);
-	File.Write(&m_file_header, sizeof(BITMAPFILEHEADER));
-	File.Write(&m_info_header, sizeof(BITMAPINFOHEADER));
-	memcpy(m_imagedata_temp, m_imagedata_ori, m_imagedata_size);
-
-	for (int i = 0; i < m_height; i++) {
-		for (int j = 0; j < m_width; j++) {
-			m_imagedata_temp[(i*m_step + j * m_channels) + 0] = 0;
-			m_imagedata_temp[(i*m_step + j * m_channels) + 1] = 0;
-		}
-	}
-
-	if (m_channels == 1) {
-		for (int i = 0; i < 256; i++) {
-			RGBQUAD GrayPalette = { i,i,i,0 };
-			File.Write(&GrayPalette, sizeof(RGBQUAD));
-		}
-	}
-
-	int r;
-	for (r = m_height - 1; r >= 0; r--) {
-		File.Write(&m_imagedata_temp[r*m_step], m_step);
-	}
-	File.Close();
-	return;
-}
-
-
-void Capp4Doc::OnButtonG()
-{
-	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	if (m_file_path == "")return;
-	CFile File;
-	int index = 0;
-	for (int i = m_file_path.GetLength() - 1; i >= 0; i--) {
-		if (m_file_path[i] == '.') {
-			index = i;
-			break;
-		}
-	}
-	CString filename = m_file_path.Mid(index);
-	File.Open(m_file_path.Left(index) + "_g" + filename, CFile::modeWrite | CFile::modeCreate);
-	File.Write(&m_file_header, sizeof(BITMAPFILEHEADER));
-	File.Write(&m_info_header, sizeof(BITMAPINFOHEADER));
-	memcpy(m_imagedata_temp, m_imagedata_ori, m_imagedata_size);
-
-	for (int i = 0; i < m_height; i++) {
-		for (int j = 0; j < m_width; j++) {
-			m_imagedata_temp[(i*m_step + j * m_channels) + 0] = 0;
-			m_imagedata_temp[(i*m_step + j * m_channels) + 2] = 0;
-		}
-	}
-
-	if (m_channels == 1) {
-		for (int i = 0; i < 256; i++) {
-			RGBQUAD GrayPalette = { i,i,i,0 };
-			File.Write(&GrayPalette, sizeof(RGBQUAD));
-		}
-	}
-
-	int r;
-	for (r = m_height - 1; r >= 0; r--) {
-		File.Write(&m_imagedata_temp[r*m_step], m_step);
-	}
-	File.Close();
-	return;
-}
-
-
-void Capp4Doc::OnButtonB()
-{
-	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	if (m_file_path == "")return;
-	CFile File;
-	int index = 0;
-	for (int i = m_file_path.GetLength() - 1; i >= 0; i--) {
-		if (m_file_path[i] == '.') {
-			index = i;
-			break;
-		}
-	}
-	CString filename = m_file_path.Mid(index);
-	File.Open(m_file_path.Left(index) + "_b" + filename, CFile::modeWrite | CFile::modeCreate);
-	File.Write(&m_file_header, sizeof(BITMAPFILEHEADER));
-	File.Write(&m_info_header, sizeof(BITMAPINFOHEADER));
-	memcpy(m_imagedata_temp, m_imagedata_ori, m_imagedata_size);
-
-	for (int i = 0; i < m_height; i++) {
-		for (int j = 0; j < m_width; j++) {
-			m_imagedata_temp[(i*m_step + j * m_channels) + 1] = 0;
-			m_imagedata_temp[(i*m_step + j * m_channels) + 2] = 0;
-		}
-	}
-
-	if (m_channels == 1) {
-		for (int i = 0; i < 256; i++) {
-			RGBQUAD GrayPalette = { i,i,i,0 };
-			File.Write(&GrayPalette, sizeof(RGBQUAD));
-		}
-	}
-
-	int r;
-	for (r = m_height - 1; r >= 0; r--) {
-		File.Write(&m_imagedata_temp[r*m_step], m_step);
-	}
-	File.Close();
-	return;
-}
-
-
-void Capp4Doc::OnButtonSave()
-{
-	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	if (m_file_path == "")return;
-	CFile File;
-	File.Open(m_file_path, CFile::modeWrite | CFile::modeCreate);
-	File.Write(&m_file_header, sizeof(BITMAPFILEHEADER));
-	File.Write(&m_info_header, sizeof(BITMAPINFOHEADER));
-
-	if (m_channels == 1) {
-		for (int i = 0; i < 256; i++) {
-			RGBQUAD GrayPalette = { i,i,i,0 };
-			File.Write(&GrayPalette, sizeof(RGBQUAD));
-		}
-	}
-
-	int r;
-	for (r = m_height - 1; r >= 0; r--) {
-		File.Write(&m_imagedata[r*m_step], m_step);
-	}
-	File.Close();
-	return;
-}
-
-void Capp4Doc::Filter() {
-	if (m_file_path == "")return;
-	memcpy(m_imagedata, m_imagedata_ori, m_imagedata_size);
-	
-	if (m_filter_check[0]) {
-		Filter_avg();
-		memcpy(m_imagedata, m_imagedata_temp, m_imagedata_size);
-	}
-	if (m_filter_check[1]) {
-		Filter_auto_contrast();
-	}
-	if (m_filter_check[2]) {
-		Filter_bright();
-	}
-	if (m_filter_check[3]) {
-		Filter_brightless();
-	}
-	if (m_filter_check[4]) {
-		Filter_gamma();
-	}
-	if (m_filter_check[5]) {
-		Filter_histogram();
-	}
-
-	UpdateAllViews(NULL);
-	return;
-}
 
 void Capp4Doc::Filter_avg() {
 	int array_size = 3;
@@ -477,6 +307,7 @@ void Capp4Doc::Filter_avg() {
 			m_imagedata_temp[i*m_step + j * m_channels + 0] = CLIP( sum_temp_b / count_temp);
 		}
 	}
+	memcpy(m_imagedata, m_imagedata_temp, m_imagedata_size);
 	return;
 }
 
@@ -513,7 +344,6 @@ void Capp4Doc::Filter_bright()
 			}
 		}
 	}
-
 	return;
 }
 
@@ -522,7 +352,7 @@ void Capp4Doc::Filter_brightless()
 	for (int i = 0; i < m_height; i++) {
 		for (int j = 0; j < m_width; j++) {
 			for (int k = 0; k < 3; k++) {
-				m_imagedata[i*m_step + j*m_channels + k] = CLIP((m_imagedata[i*m_step + j*m_channels + k] - m_bright)*m_brightless);
+				m_imagedata[i*m_step + j*m_channels + k] = CLIP((m_imagedata[i*m_step + j*m_channels + k] - (m_bright_check==true ? m_bright:0))*m_brightless);
 			}
 		}
 	}
@@ -575,63 +405,80 @@ void Capp4Doc::Filter_histogram()
 	}
 }
 
-void Capp4Doc::Onavgfilter()
+//void Capp4Doc::MyFloodFill(int x, int y, BYTE nr, BYTE ng, BYTE nb)
+//{
+//	int dx[8] = {-1,0,1,1,1,0,-1,-1};
+//	int dy[8] = {1,1,1,0,-1,-1,-1,0};
+//	BOOL* check = new BOOL[m_imagedata_size];
+//	ZeroMemory(check, m_imagedata_size * sizeof(BOOL));
+//	queue<Pair> q;
+//	q.push(Pair(x, y));
+//	BYTE r, g, b;
+//	r = m_imagedata[(m_height - y - 1)*m_step + x*m_channels + 2];
+//	g = m_imagedata[(m_height - y - 1)*m_step + x*m_channels + 1];
+//	b = m_imagedata[(m_height - y - 1)*m_step + x*m_channels + 0];
+//	while (!q.empty()) {
+//		Pair p = q.front();
+//		q.pop();
+//		for (int i = 0; i < 8; i++) {
+//			int nx = p.x + dx[i];
+//			int ny = p.y + dy[i];
+//			int index = (m_height - ny - 1)*m_step + nx*m_channels;
+//			if (nx<0 || ny<0 || nx>=m_width || ny>=m_height)continue;
+//			if (check[index + 0] == true && check[index + 1] == true && check[index + 2] == true) {
+//				continue;
+//			}
+//			if (m_imagedata[index + 0] == b && m_imagedata[index + 1] == g && m_imagedata[index + 2] == r) {
+//				m_imagedata[index + 0] = nb;
+//				m_imagedata[index + 1] = ng;
+//				m_imagedata[index + 2] = nr;
+//				check[index + 0] = true;
+//				check[index + 1] = true;
+//				check[index + 2] = true;
+//				q.push(Pair(nx,ny));
+//			}
+//		}
+//	}
+//	free(check);
+//}
+
+COLORREF Capp4Doc::GetRGB(int x, int y)
 {
-	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	m_filter_check[0] = !m_filter_check[0];
-	Filter();
-}
-
-
-void Capp4Doc::OnUpdateavgfilter(CCmdUI *pCmdUI)
-{
-	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
-	pCmdUI->SetCheck(m_filter_check[0]);
-}
-
-
-void Capp4Doc::Onautocontrast()
-{
-	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	m_filter_check[1] = !m_filter_check[1];
-	Filter();
-}
-
-
-void Capp4Doc::OnUpdateautocontrast(CCmdUI *pCmdUI)
-{
-	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
-	pCmdUI->SetCheck(m_filter_check[1]);
+	BYTE r, g, b;
+	r = m_imagedata[(m_height - y - 1)*m_step + x*m_channels + 2];
+	g = m_imagedata[(m_height - y - 1)*m_step + x*m_channels + 1];
+	b = m_imagedata[(m_height - y - 1)*m_step + x*m_channels + 0];
+	return RGB(r,g,b);
 }
 
 
 void Capp4Doc::Onbright()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	m_filter_check[2] = !m_filter_check[2];
-	Filter();
+	m_bright_check = !m_bright_check;
+	UpdateAllViews(NULL);
 }
 
 
 void Capp4Doc::OnUpdatebright(CCmdUI *pCmdUI)
 {
 	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
-	pCmdUI->SetCheck(m_filter_check[2]);
+	pCmdUI->SetCheck(m_bright_check);
 }
 
 
 void Capp4Doc::Onbrightless()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	m_filter_check[3] = !m_filter_check[3];
-	Filter();
+	m_brightless_check = !m_brightless_check;
+	UpdateAllViews(NULL);
 }
 
 
 void Capp4Doc::OnUpdatebrightless(CCmdUI *pCmdUI)
 {
 	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
-	pCmdUI->SetCheck(m_filter_check[3]);
+	pCmdUI->SetCheck(m_brightless_check);
 }
 
 
@@ -670,21 +517,6 @@ void Capp4Doc::OnUpdatepaintsegment(CCmdUI *pCmdUI)
 	else {
 		pCmdUI->SetCheck(false);
 	}
-}
-
-
-void Capp4Doc::OnCheck2()
-{
-	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	m_filter_check[5] = !m_filter_check[5];
-	Filter();
-}
-
-
-void Capp4Doc::OnUpdateCheck2(CCmdUI *pCmdUI)
-{
-	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
-	pCmdUI->SetCheck(m_filter_check[5]);
 }
 
 
@@ -730,6 +562,13 @@ void Capp4Doc::OnButton14()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
 	m_state = m_state == 5 ? 0 : 5;
+	if (m_state == 5) {
+		Capp4View* pView = (Capp4View*)((CMainFrame*)AfxGetMainWnd())->GetActiveView();
+		pView->Poly_start.x = -1;
+		pView->Poly_start.y = -1;
+		pView->Poly_temp.x = -1;
+		pView->Poly_temp.y = -1;
+	}
 }
 
 
@@ -761,4 +600,180 @@ void Capp4Doc::OnUpdateButton15(CCmdUI *pCmdUI)
 	else {
 		pCmdUI->SetCheck(false);
 	}
+}
+
+
+void Capp4Doc::OnButton16()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	m_state = m_state == 7 ? 0 : 7;
+}
+
+
+void Capp4Doc::OnUpdateButton16(CCmdUI *pCmdUI)
+{
+	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
+	if (m_state == 7) {
+		pCmdUI->SetCheck(true);
+	}
+	else {
+		pCmdUI->SetCheck(false);
+	}
+}
+
+
+void Capp4Doc::OnSaveR()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	//AfxMessageBox(L"R");
+	if (m_file_path == "")return;
+	CFile File;
+	int index = 0;
+	for (int i = m_file_path.GetLength() - 1; i >= 0; i--) {
+		if (m_file_path[i] == '.') {
+			index = i;
+			break;
+		}
+	}
+	CString filename = m_file_path.Mid(index);
+	File.Open(m_file_path.Left(index) + "_r" + filename, CFile::modeWrite | CFile::modeCreate);
+	File.Write(&m_file_header, sizeof(BITMAPFILEHEADER));
+	File.Write(&m_info_header, sizeof(BITMAPINFOHEADER));
+
+	BITMAPINFO info_header;
+	info_header.bmiHeader = m_info_header;
+	HDC dc = GetDC(NULL);
+	GetDIBits(dc, m_Cbitmap, 0, m_height, m_imagedata, &info_header, DIB_RGB_COLORS);
+
+	for (int i = 0; i < m_height; i++) {
+		for (int j = 0; j < m_width; j++) {
+			m_imagedata[(i*m_step + j * m_channels) + 0] = 0;
+			m_imagedata[(i*m_step + j * m_channels) + 1] = 0;
+		}
+	}
+
+	if (m_channels == 1) {
+		for (int i = 0; i < 256; i++) {
+			RGBQUAD GrayPalette = { i,i,i,0 };
+			File.Write(&GrayPalette, sizeof(RGBQUAD));
+		}
+	}
+
+	File.Write(m_imagedata, m_imagedata_size);
+	File.Close();
+	return;
+}
+
+
+void Capp4Doc::OnSaveG()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	//AfxMessageBox(L"G");
+	if (m_file_path == "")return;
+	CFile File;
+	int index = 0;
+	for (int i = m_file_path.GetLength() - 1; i >= 0; i--) {
+		if (m_file_path[i] == '.') {
+			index = i;
+			break;
+		}
+	}
+	CString filename = m_file_path.Mid(index);
+	File.Open(m_file_path.Left(index) + "_g" + filename, CFile::modeWrite | CFile::modeCreate);
+	File.Write(&m_file_header, sizeof(BITMAPFILEHEADER));
+	File.Write(&m_info_header, sizeof(BITMAPINFOHEADER));
+
+	BITMAPINFO info_header;
+	info_header.bmiHeader = m_info_header;
+	HDC dc = GetDC(NULL);
+	GetDIBits(dc, m_Cbitmap, 0, m_height, m_imagedata, &info_header, DIB_RGB_COLORS);
+
+	for (int i = 0; i < m_height; i++) {
+		for (int j = 0; j < m_width; j++) {
+			m_imagedata[(i*m_step + j * m_channels) + 0] = 0;
+			m_imagedata[(i*m_step + j * m_channels) + 2] = 0;
+		}
+	}
+
+	if (m_channels == 1) {
+		for (int i = 0; i < 256; i++) {
+			RGBQUAD GrayPalette = { i,i,i,0 };
+			File.Write(&GrayPalette, sizeof(RGBQUAD));
+		}
+	}
+
+	File.Write(m_imagedata, m_imagedata_size);
+	File.Close();
+	return;
+}
+
+
+void Capp4Doc::OnSaveB()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	//AfxMessageBox(L"B");
+	if (m_file_path == "")return;
+	CFile File;
+	int index = 0;
+	for (int i = m_file_path.GetLength() - 1; i >= 0; i--) {
+		if (m_file_path[i] == '.') {
+			index = i;
+			break;
+		}
+	}
+	CString filename = m_file_path.Mid(index);
+	File.Open(m_file_path.Left(index) + "_b" + filename, CFile::modeWrite | CFile::modeCreate);
+	File.Write(&m_file_header, sizeof(BITMAPFILEHEADER));
+	File.Write(&m_info_header, sizeof(BITMAPINFOHEADER));
+
+	BITMAPINFO info_header;
+	info_header.bmiHeader = m_info_header;
+	HDC dc = GetDC(NULL);
+	GetDIBits(dc, m_Cbitmap, 0, m_height, m_imagedata, &info_header, DIB_RGB_COLORS);
+
+	for (int i = 0; i < m_height; i++) {
+		for (int j = 0; j < m_width; j++) {
+			m_imagedata[(i*m_step + j * m_channels) + 2] = 0;
+			m_imagedata[(i*m_step + j * m_channels) + 1] = 0;
+		}
+	}
+
+	if (m_channels == 1) {
+		for (int i = 0; i < 256; i++) {
+			RGBQUAD GrayPalette = { i,i,i,0 };
+			File.Write(&GrayPalette, sizeof(RGBQUAD));
+		}
+	}
+
+	File.Write(m_imagedata, m_imagedata_size);
+	File.Close();
+	return;
+}
+
+
+void Capp4Doc::OnSaveOnfile()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	//AfxMessageBox(L"ALL");
+	if (m_file_path == "")return;
+	CFile File;
+	File.Open(m_file_path, CFile::modeWrite | CFile::modeCreate);
+	File.Write(&m_file_header, sizeof(BITMAPFILEHEADER));
+	File.Write(&m_info_header, sizeof(BITMAPINFOHEADER));
+
+	if (m_channels == 1) {
+		for (int i = 0; i < 256; i++) {
+			RGBQUAD GrayPalette = { i,i,i,0 };
+			File.Write(&GrayPalette, sizeof(RGBQUAD));
+		}
+	}
+
+	BITMAPINFO info_header;
+	info_header.bmiHeader = m_info_header;
+	HDC dc = GetDC(NULL);
+	GetDIBits(dc, m_Cbitmap, 0, m_height, m_imagedata, &info_header, DIB_RGB_COLORS);
+	File.Write(m_imagedata, m_imagedata_size);
+
+	File.Close();
+	return;
 }

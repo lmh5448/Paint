@@ -16,6 +16,9 @@
 #include "app4.h"
 
 #include "MainFrm.h"
+#include"app4Doc.h"
+#include"app4View.h"
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -218,7 +221,7 @@ void CMainFrame::OnSlider2()
 	int v = pSilder->GetPos();
 	Capp4Doc* pDoc = (Capp4Doc*)GetActiveDocument();
 	pDoc->m_bright = v;
-	pDoc->Filter();
+	Invalidate(false);
 
 	// 리본 슬라이더 위치 값 수정
 	/*int custPos = 20;
@@ -233,7 +236,7 @@ void CMainFrame::OnSlider3()
 	int v = pSilder->GetPos();
 	Capp4Doc* pDoc = (Capp4Doc*)GetActiveDocument();
 	pDoc->m_brightless = v;
-	pDoc->Filter();
+	Invalidate(false);
 }
 
 
@@ -243,18 +246,17 @@ void CMainFrame::OnCombo3()
 	CMFCRibbonComboBox* pComboBox = DYNAMIC_DOWNCAST(CMFCRibbonComboBox, m_wndRibbonBar.FindByID(ID_COMBO3));
 	int nCurSel = pComboBox->GetCurSel();
 	Capp4Doc* pDoc = (Capp4Doc*)GetActiveDocument();
+	Capp4View* pView = (Capp4View*)GetActiveView();
 	if (nCurSel == 0) {
-		pDoc->m_filter_check[4] = false;
 		pDoc->m_gamma = 1;
 	}else if (nCurSel == 1) {
-		pDoc->m_filter_check[4] = true;
 		pDoc->m_gamma = 2.5;
+		pView->OnFilterGamma(pDoc->m_gamma);
 	}
 	else if (nCurSel == 2) {
-		pDoc->m_filter_check[4] = true;
 		pDoc->m_gamma = 1/2.5;
+		pView->OnFilterGamma(pDoc->m_gamma);
 	}
-	pDoc->Filter();
 }
 
 

@@ -26,7 +26,9 @@ public:
 	CPoint Previous_;
 	CPoint Previous_check;
 	CPoint Start_;
-	CDC m_BackBufferDC;
+	CPoint Poly_start;
+	CPoint Poly_temp;
+	CRect m_rectCurHist;
 // 작업입니다.
 public:
 
@@ -60,6 +62,10 @@ public:
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnEditUndo();
 	afx_msg void OnEditRedo();
+	afx_msg void OnFilterHistogram();
+	afx_msg void OnFilterAvg();
+	afx_msg void OnFilterContrast();
+	afx_msg void OnFilterGamma(double gamma_v);
 };
 
 #ifndef _DEBUG  // app4View.cpp의 디버그 버전

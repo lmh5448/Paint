@@ -35,13 +35,16 @@
 #define ID_VIEW_APPLOOK_WINDOWS_7       219
 #define IDS_EDIT_MENU                   306
 #define IDR_RIBBON                      307
+#define IDB_BITMAP1                     317
 #define ID_WRITE_PASTEASHYPERLINK       32770
 #define ID_32771                        32771
 #define ID_BUTTON2                      32772
 #define ID_paint_line                   32772
 #define ID_BUTTON3                      32773
+#define ID_FILTER_AVG                   32773
 #define ID_BUTTON4                      32774
 #define ID_BUTTON5                      32775
+#define ID_FILTER_CONTRAST              32775
 #define ID_BUTTON6                      32776
 #define ID_avg_filter                   32777
 #define ID_auto_contrast                32778
@@ -51,7 +54,6 @@
 #define ID_brightless                   32785
 #define ID_BUTTON14                     32795
 #define ID_paint_segment                32796
-#define ID_CHECK2                       32798
 #define ID_COMBO3                       32799
 #define ID_COMBO4                       32800
 #define ID_BUTTON7                      32808
@@ -61,13 +63,20 @@
 #define ID_BUTTON12                     32814
 #define ID_BUTTON13                     32815
 #define ID_BUTTON15                     32816
+#define ID_BUTTON16                     32817
+#define ID_FILTER_HISTOGRAM             32818
+#define ID_BUTTON17                     32819
+#define ID_SAVE_R                       32820
+#define ID_SAVE_G                       32821
+#define ID_SAVE_B                       32822
+#define ID_SAVE_ONFILE                  32823
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        317
-#define _APS_NEXT_COMMAND_VALUE         32817
+#define _APS_NEXT_RESOURCE_VALUE        319
+#define _APS_NEXT_COMMAND_VALUE         32824
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           310
 #endif

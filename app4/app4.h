@@ -33,7 +33,6 @@ public:
 public:
 	virtual BOOL InitInstance();
 	virtual int ExitInstance();
-
 // 구현입니다.
 	UINT  m_nAppLook;
 	virtual void PreLoadState();
