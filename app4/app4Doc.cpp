@@ -437,8 +437,8 @@ void Capp4Doc::Filter_median()
 	vector<double> v;
 	vector<double> v1;
 	vector<Pair> v2;
-	for (i = 0; i < m_width; i++) {
-		for (j = 0; j < m_height; j++) {
+	for (i = 0; i < m_height; i++) {
+		for (j = 0; j < m_width; j++) {
 			size = 0;
 			v.clear();
 			v1.clear();
@@ -451,7 +451,7 @@ void Capp4Doc::Filter_median()
 					temp = (m_imagedata[index + 0]*114 + m_imagedata[index + 1]*578 + m_imagedata[index + 2]*308)/1000;
 					v.push_back(temp);
 					v1.push_back(temp);
-					v2.push_back(Pair(i+n,j+m));
+					v2.push_back(Pair(i + n, j + m));
 				}
 			}
 			sort(v.begin(), v.end());
@@ -463,7 +463,6 @@ void Capp4Doc::Filter_median()
 					m_imagedata_temp[i*m_step + j*m_channels + 0] = m_imagedata[index + 0];
 					m_imagedata_temp[i*m_step + j*m_channels + 1] = m_imagedata[index + 1];
 					m_imagedata_temp[i*m_step + j*m_channels + 2] = m_imagedata[index + 2];
-					break;
 				}
 			}
 		}
