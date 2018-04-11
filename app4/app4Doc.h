@@ -30,7 +30,6 @@ public:
 	BITMAPFILEHEADER m_file_header;
 	BITMAPINFOHEADER m_info_header;
 	BYTE* m_imagedata;
-	BYTE* m_imagedata_ori;
 	BYTE* m_imagedata_temp;
 	int m_imagedata_size;
 	int m_channels;
@@ -39,8 +38,8 @@ public:
 	int m_step;
 	BOOL m_bright_check = false;
 	BOOL m_brightless_check = false;
-	int m_bright;
-	int m_brightless;
+	int m_bright=0;
+	int m_brightless=1;
 	int m_filter_size = 10;
 	//1-연필, 2-선분, 3-사각형, 4-동그라미, 5-다각형, 6-지우개, 7-색채우기
 	int m_state = 0;
@@ -55,6 +54,8 @@ public:
 	int m_thickness = 5;
 	BOOL m_gamma_check = false;
 	double m_gamma = 1.0;
+	BOOL m_binary_check = false;
+	int m_binary = 127;
 // 작업입니다.
 public:
 
@@ -88,13 +89,16 @@ protected:
 #endif // SHARED_HANDLERS
 public:
 	virtual BOOL OnOpenDocument(LPCTSTR lpszPathName);
-	virtual BOOL OnSaveDocument(LPCTSTR lpszPathName);
+//	virtual BOOL OnSaveDocument(LPCTSTR lpszPathName);
 	afx_msg void Filter_avg();
 	afx_msg void Filter_auto_contrast();
 	afx_msg void Filter_bright();
 	afx_msg void Filter_brightless();
 	afx_msg void Filter_gamma();
 	afx_msg void Filter_histogram();
+	afx_msg void Filter_sharpening();
+	afx_msg void Filter_binary();
+	afx_msg void Filter_median();
 	//사용안한다 기능은 똑같지만 속도차이가 어마어마함 -> ExtFloodFill FLOODFILLSURFACE
 	//afx_msg void MyFloodFill(int x, int y, BYTE nr, BYTE ng, BYTE nb);
 	COLORREF GetRGB(int x,int y);
@@ -120,4 +124,6 @@ public:
 	afx_msg void OnSaveG();
 	afx_msg void OnSaveB();
 	afx_msg void OnSaveOnfile();
+	afx_msg void OnBinaryCheck();
+	afx_msg void OnUpdateBinaryCheck(CCmdUI *pCmdUI);
 };

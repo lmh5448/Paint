@@ -31,8 +31,6 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWndEx)
 	ON_WM_CREATE()
 	ON_COMMAND_RANGE(ID_VIEW_APPLOOK_WIN_2000, ID_VIEW_APPLOOK_WINDOWS_7, &CMainFrame::OnApplicationLook)
 	ON_UPDATE_COMMAND_UI_RANGE(ID_VIEW_APPLOOK_WIN_2000, ID_VIEW_APPLOOK_WINDOWS_7, &CMainFrame::OnUpdateApplicationLook)
-	ON_COMMAND(ID_SLIDER2, &CMainFrame::OnSlider2)
-	ON_COMMAND(ID_SLIDER3, &CMainFrame::OnSlider3)
 ON_COMMAND(ID_COMBO3, &CMainFrame::OnCombo3)
 ON_UPDATE_COMMAND_UI(ID_COMBO3, &CMainFrame::OnUpdateCombo3)
 ON_COMMAND(ID_COMBO4, &CMainFrame::OnCombo4)
@@ -213,33 +211,6 @@ void CMainFrame::OnUpdateApplicationLook(CCmdUI* pCmdUI)
 }
 
 
-
-void CMainFrame::OnSlider2()
-{
-	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	CMFCRibbonSlider* pSilder = DYNAMIC_DOWNCAST(CMFCRibbonSlider, m_wndRibbonBar.FindByID(ID_SLIDER2));
-	int v = pSilder->GetPos();
-	Capp4Doc* pDoc = (Capp4Doc*)GetActiveDocument();
-	pDoc->m_bright = v;
-	Invalidate(false);
-
-	// 리본 슬라이더 위치 값 수정
-	/*int custPos = 20;
-	pSlider->SetPos(custPos);*/
-}
-
-
-void CMainFrame::OnSlider3()
-{
-	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	CMFCRibbonSlider* pSilder = DYNAMIC_DOWNCAST(CMFCRibbonSlider, m_wndRibbonBar.FindByID(ID_SLIDER3));
-	int v = pSilder->GetPos();
-	Capp4Doc* pDoc = (Capp4Doc*)GetActiveDocument();
-	pDoc->m_brightless = v;
-	Invalidate(false);
-}
-
-
 void CMainFrame::OnCombo3()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
@@ -337,3 +308,5 @@ void CMainFrame::OnUpdateButton8(CCmdUI *pCmdUI)
 		pCmdUI->SetCheck(false);
 	}
 }
+
+

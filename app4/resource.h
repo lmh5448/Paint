@@ -43,9 +43,11 @@
 #define ID_BUTTON3                      32773
 #define ID_FILTER_AVG                   32773
 #define ID_BUTTON4                      32774
+#define ID_FILTER_SHARPENING            32774
 #define ID_BUTTON5                      32775
 #define ID_FILTER_CONTRAST              32775
 #define ID_BUTTON6                      32776
+#define ID_FILTER_MEDIAN                32776
 #define ID_avg_filter                   32777
 #define ID_auto_contrast                32778
 #define ID_SLIDER2                      32779
@@ -70,13 +72,15 @@
 #define ID_SAVE_G                       32821
 #define ID_SAVE_B                       32822
 #define ID_SAVE_ONFILE                  32823
+#define ID_BINARY_CHECK                 32828
+#define ID_SLIDER4                      32829
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        319
-#define _APS_NEXT_COMMAND_VALUE         32824
+#define _APS_NEXT_COMMAND_VALUE         32830
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           310
 #endif

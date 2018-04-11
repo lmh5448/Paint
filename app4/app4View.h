@@ -14,7 +14,7 @@
 
 #pragma once
 
-class Capp4View : public CView
+class Capp4View : public CScrollView
 {
 protected: // serialization에서만 만들어집니다.
 	Capp4View();
@@ -29,6 +29,8 @@ public:
 	CPoint Poly_start;
 	CPoint Poly_temp;
 	CRect m_rectCurHist;
+	int m_x = 0;
+	int m_y = 0;
 // 작업입니다.
 public:
 
@@ -66,6 +68,14 @@ public:
 	afx_msg void OnFilterAvg();
 	afx_msg void OnFilterContrast();
 	afx_msg void OnFilterGamma(double gamma_v);
+	afx_msg void OnFileSave();
+	afx_msg void OnFilterSharpening();
+	afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
+	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
+	afx_msg void OnSlider2();
+	afx_msg void OnSlider3();
+	afx_msg void OnSlider4();
+	afx_msg void OnFilterMedian();
 };
 
 #ifndef _DEBUG  // app4View.cpp의 디버그 버전

@@ -22,6 +22,7 @@ protected: // serialization에서만 만들어집니다.
 
 // 특성입니다.
 public:
+	CMFCRibbonBar     m_wndRibbonBar;
 
 // 작업입니다.
 public:
@@ -39,7 +40,6 @@ public:
 #endif
 
 protected:  // 컨트롤 모음이 포함된 멤버입니다.
-	CMFCRibbonBar     m_wndRibbonBar;
 	CMFCRibbonApplicationButton m_MainButton;
 	CMFCToolBarImages m_PanelImages;
 	CMFCRibbonStatusBar  m_wndStatusBar;
@@ -52,8 +52,6 @@ protected:
 	DECLARE_MESSAGE_MAP()
 
 public:
-	afx_msg void OnSlider2();
-	afx_msg void OnSlider3();
 	afx_msg void OnCombo3();
 	afx_msg void OnUpdateCombo3(CCmdUI *pCmdUI);
 	afx_msg void OnCombo4();

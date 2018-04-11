@@ -21,6 +21,7 @@
 
 #include "app4Doc.h"
 #include "app4View.h"
+#include "MainFrm.h"
 
 #include<vector>
 #include<stack>
@@ -59,9 +60,9 @@ stack<Draw_info> s;
 
 // Capp4View
 
-IMPLEMENT_DYNCREATE(Capp4View, CView)
+IMPLEMENT_DYNCREATE(Capp4View, CScrollView)
 
-BEGIN_MESSAGE_MAP(Capp4View, CView)
+BEGIN_MESSAGE_MAP(Capp4View, CScrollView)
 	ON_WM_CONTEXTMENU()
 	ON_WM_RBUTTONUP()
 	ON_WM_CREATE()
@@ -74,6 +75,14 @@ ON_COMMAND(ID_EDIT_REDO, &Capp4View::OnEditRedo)
 ON_COMMAND(ID_FILTER_HISTOGRAM, &Capp4View::OnFilterHistogram)
 ON_COMMAND(ID_FILTER_AVG, &Capp4View::OnFilterAvg)
 ON_COMMAND(ID_FILTER_CONTRAST, &Capp4View::OnFilterContrast)
+ON_COMMAND(ID_FILE_SAVE, &Capp4View::OnFileSave)
+ON_COMMAND(ID_FILTER_SHARPENING, &Capp4View::OnFilterSharpening)
+ON_WM_VSCROLL()
+ON_WM_HSCROLL()
+ON_COMMAND(ID_SLIDER2, &Capp4View::OnSlider2)
+ON_COMMAND(ID_SLIDER3, &Capp4View::OnSlider3)
+ON_COMMAND(ID_SLIDER4, &Capp4View::OnSlider4)
+ON_COMMAND(ID_FILTER_MEDIAN, &Capp4View::OnFilterMedian)
 END_MESSAGE_MAP()
 
 // Capp4View 생성/소멸
@@ -106,6 +115,8 @@ void Capp4View::OnDraw(CDC* pDC)
 		return;
 
 	// TODO: 여기에 원시 데이터에 대한 그리기 코드를 추가합니다.
+	m_x = this->GetScrollPos(SB_HORZ);
+	m_y = this->GetScrollPos(SB_VERT);
 	////////////////////////////////////////////////////////////
 	//copy
 	BYTE* copy_temp = new BYTE[pDoc->m_imagedata_size];
@@ -139,7 +150,7 @@ void Capp4View::OnDraw(CDC* pDC)
 		else { memDC.SelectStockObject(NULL_BRUSH); }
 
 		//도형그리기 redo undo 때문에 계속 추가
-		//1연필 2선분 3사각형 4원 5지우개 6다각형 7색채우기 8히스토그램 필터 9avg필터 10auto contrast
+		//1연필 2선분 3사각형 4원 5지우개 6다각형 7색채우기 8히스토그램 필터 9블러링 10엔드인 11감마 12샤프닝 
 		if(v[i].type==1 || v[i].type==2 || v[i].type==5 || v[i].type==6){
 			memDC.MoveTo(point1);
 			memDC.LineTo(point2);
@@ -177,6 +188,16 @@ void Capp4View::OnDraw(CDC* pDC)
 			pDoc->Filter_gamma();
 			SetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
 		}
+		else if (v[i].type == 12) {
+			GetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
+			pDoc->Filter_sharpening();
+			SetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
+		}
+		else if (v[i].type == 13) {
+			GetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
+			pDoc->Filter_median();
+			SetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
+		}
 
 		pen.DeleteObject();
 		brush.DeleteObject();
@@ -191,10 +212,16 @@ void Capp4View::OnDraw(CDC* pDC)
 		pDoc->Filter_brightless();
 		SetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
 	}
+	if (pDoc->m_binary_check) {
+		GetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
+		pDoc->Filter_binary();
+		SetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
+	}
 	////
 	pDC->BitBlt(0, 0, pDoc->m_width, pDoc->m_height, &memDC, 0, 0, SRCCOPY);
 	//UI가 갱신이안되는건 이거때문이였음 invalidate 하는역할 보고 넘어가자
 	//Invalidate(false);
+	
 	ReleaseDC(&memDC);
 }
 
@@ -256,6 +283,8 @@ void Capp4View::OnDestroy()
 void Capp4View::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	point.x += m_x;
+	point.y += m_y;
 	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
 	Previous_ = point;
 	Start_ = point;
@@ -296,6 +325,8 @@ void Capp4View::OnMouseMove(UINT nFlags, CPoint point)
 	CClientDC dc(this);
 	if ((nFlags & MK_LBUTTON) == MK_LBUTTON) {
 		if (pDoc->m_state == 0)return;
+		point.x += m_x;
+		point.y += m_y;
 		if (pDoc->m_state == 1) {
 			Draw_info draw;
 			draw.x1 = Previous_.x;
@@ -390,6 +421,8 @@ void Capp4View::OnLButtonUp(UINT nFlags, CPoint point)
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
 	if (pDoc->m_state == 0)return;
+	point.x += m_x;
+	point.y += m_y;
 	if (pDoc->m_state == 1) {
 		Draw_info draw;
 		draw.x1 = Previous_.x;
@@ -490,10 +523,9 @@ void Capp4View::OnInitialUpdate()
 	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
 	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
 	this->GetClientRect(m_rectCurHist);
+	
 	//this->GetWindowRect(m_rectCurHist);
 	if (pDoc->m_file_path == "") {
-		//GetParentFrame()->SetWindowPos(NULL, m_rectCurHist.left, m_rectCurHist.top, 1000, 500, SWP_NOZORDER);
-		//GetParentFrame()->SetWindowPos(NULL, 200, 200, 200+500,220+500, SWP_NOZORDER);
 		//헤더초기화 및 비트맵 선언
 		pDoc->m_file_header.bfType = 19778;
 		pDoc->m_file_header.bfReserved1 = 0;
@@ -501,8 +533,8 @@ void Capp4View::OnInitialUpdate()
 		pDoc->m_file_header.bfOffBits = 54;
 
 		pDoc->m_info_header.biSize = 40;
-		pDoc->m_info_header.biWidth = m_rectCurHist.right;
-		pDoc->m_info_header.biHeight = m_rectCurHist.bottom;
+		pDoc->m_info_header.biWidth = 1437;
+		pDoc->m_info_header.biHeight = 637;
 		pDoc->m_info_header.biPlanes = 1;
 		pDoc->m_info_header.biBitCount = 24;
 		pDoc->m_info_header.biCompression = BI_RGB;
@@ -521,30 +553,13 @@ void Capp4View::OnInitialUpdate()
 
 		pDoc->m_imagedata = new BYTE[pDoc->m_imagedata_size];
 		pDoc->m_imagedata_temp = new BYTE[pDoc->m_imagedata_size];
-		pDoc->m_imagedata_ori = new BYTE[pDoc->m_imagedata_size];
 
 		std::fill_n(pDoc->m_imagedata, pDoc->m_imagedata_size*sizeof(BYTE), 255);
 		memcpy(pDoc->m_imagedata_temp, pDoc->m_imagedata, pDoc->m_imagedata_size * sizeof(BYTE));
-		memcpy(pDoc->m_imagedata_ori, pDoc->m_imagedata, pDoc->m_imagedata_size * sizeof(BYTE));
 
 		pDoc->m_bright = 0;
 		pDoc->m_brightless = 0;
-		
-		////CDC*	pDC	= this->GetDC();
 
-		////pDoc->m_Cbitmap.CreateBitmap(pDoc->m_width, pDoc->m_height, 1, 24, pDoc->m_imagedata);
-		////pDoc->m_Cbitmap_ori.CreateBitmap(pDoc->m_width, pDoc->m_height, 1, 24, pDoc->m_imagedata);
-
-		//CDC* pDC = GetDC();
-		//CClientDC dc(this);
-		//pDC->CreateCompatibleDC(&dc);
-		//pDoc->m_Cbitmap.CreateCompatibleBitmap(pDC, pDoc->m_width, pDoc->m_height);
-		//pDoc->m_Cbitmap_ori.CreateCompatibleBitmap(pDC, pDoc->m_width, pDoc->m_height);
-
-		//pDoc->m_Cbitmap.SetBitmapBits(pDoc->m_imagedata_size, pDoc->m_imagedata);
-		//pDoc->m_Cbitmap_ori.SetBitmapBits(pDoc->m_imagedata_size, pDoc->m_imagedata);
-
-		
 		pDoc->m_Cbitmap_ori.LoadBitmapW(IDB_BITMAP1);
 		pDoc->m_Cbitmap.LoadBitmapW(IDB_BITMAP1);
 
@@ -559,6 +574,10 @@ void Capp4View::OnInitialUpdate()
 		}
 		pDoc->m_vector_index = 1;
 	}
+	CSize sizeTotal;
+	sizeTotal.cx = pDoc->m_width;
+	sizeTotal.cy = pDoc->m_height;
+	SetScrollSizes(MM_TEXT, sizeTotal);
 
 	Invalidate();
 }
@@ -694,12 +713,157 @@ void Capp4View::OnFilterGamma(double gamma_v)
 	draw.r = pDoc->m_color_r;
 	draw.g = pDoc->m_color_g;
 	draw.b = pDoc->m_color_b;
-	draw.type = 10;
+	draw.type = 11;
 	draw.brush_check = pDoc->m_brush_check;
 	draw.brush_r = pDoc->m_brush_color_r;
 	draw.brush_g = pDoc->m_brush_color_g;
 	draw.brush_b = pDoc->m_brush_color_b;
 	draw.gamma_v = gamma_v;
+	v.push_back(draw);
+	pDoc->m_vector_index++;
+	while (!s.empty()) {
+		s.pop();
+	}
+	Invalidate(false);
+}
+
+
+void Capp4View::OnFileSave()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	//AfxMessageBox(L"View");
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	CFile File;
+	CFileDialog SaveDlg(FALSE, _T("bmp"), NULL, OFN_HIDEREADONLY);
+
+	if (SaveDlg.DoModal() == IDOK) {
+		pDoc->m_file_path = SaveDlg.GetPathName();
+		File.Open(SaveDlg.GetPathName(), CFile::modeWrite | CFile::modeCreate);
+		File.Write(&pDoc->m_file_header, sizeof(BITMAPFILEHEADER));
+		File.Write(&pDoc->m_info_header, sizeof(BITMAPINFOHEADER));
+
+		if (pDoc->m_channels == 1) {
+			for (int i = 0; i < 256; i++) {
+				RGBQUAD GrayPalette = { i,i,i,0 };
+				File.Write(&GrayPalette, sizeof(RGBQUAD));
+			}
+		}
+
+		BITMAPINFO info_header;
+		info_header.bmiHeader = pDoc->m_info_header;
+		HDC dc = GetDC()->m_hDC;
+		GetDIBits(dc, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
+		File.Write(pDoc->m_imagedata, pDoc->m_imagedata_size);
+		File.Close();
+	}
+}
+
+
+void Capp4View::OnFilterSharpening()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	Draw_info draw;
+	draw.x1 = 0;
+	draw.y1 = 0;
+	draw.x2 = 0;
+	draw.y2 = 0;
+	draw.check = pDoc->m_vector_index;
+	draw.thickness = pDoc->m_thickness;
+	draw.r = pDoc->m_color_r;
+	draw.g = pDoc->m_color_g;
+	draw.b = pDoc->m_color_b;
+	draw.type = 12;
+	draw.brush_check = pDoc->m_brush_check;
+	draw.brush_r = pDoc->m_brush_color_r;
+	draw.brush_g = pDoc->m_brush_color_g;
+	draw.brush_b = pDoc->m_brush_color_b;
+	v.push_back(draw);
+	pDoc->m_vector_index++;
+	while (!s.empty()) {
+		s.pop();
+	}
+	Invalidate(false);
+}
+
+
+void Capp4View::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	Invalidate(true);
+	m_y = this->GetScrollPos(SB_VERT);
+	CScrollView::OnVScroll(nSBCode, nPos, pScrollBar);
+}
+
+
+void Capp4View::OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	Invalidate(true);
+	m_x = this->GetScrollPos(SB_HORZ);
+	CScrollView::OnHScroll(nSBCode, nPos, pScrollBar);
+}
+
+
+void Capp4View::OnSlider2()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CMainFrame* pFrame = (CMainFrame*)AfxGetMainWnd();
+	CMFCRibbonSlider* pSilder = DYNAMIC_DOWNCAST(CMFCRibbonSlider, pFrame->m_wndRibbonBar.FindByID(ID_SLIDER2));
+	int v = pSilder->GetPos();
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	pDoc->m_bright = v;
+	Invalidate(false);
+	
+	// 리본 슬라이더 위치 값 수정
+	/*int custPos = 20;
+	pSlider->SetPos(custPos);*/
+}
+
+
+void Capp4View::OnSlider3()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CMainFrame* pFrame = (CMainFrame*)AfxGetMainWnd();
+	CMFCRibbonSlider* pSilder = DYNAMIC_DOWNCAST(CMFCRibbonSlider, pFrame->m_wndRibbonBar.FindByID(ID_SLIDER3));
+	int v = pSilder->GetPos();
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	pDoc->m_brightless = v;
+	Invalidate(false);
+}
+
+
+void Capp4View::OnSlider4()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CMainFrame* pFrame = (CMainFrame*)AfxGetMainWnd();
+	CMFCRibbonSlider* pSilder = DYNAMIC_DOWNCAST(CMFCRibbonSlider, pFrame->m_wndRibbonBar.FindByID(ID_SLIDER4));
+	int v = pSilder->GetPos();
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	pDoc->m_binary = v;
+	Invalidate(false);
+}
+
+
+void Capp4View::OnFilterMedian()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	Draw_info draw;
+	draw.x1 = 0;
+	draw.y1 = 0;
+	draw.x2 = 0;
+	draw.y2 = 0;
+	draw.check = pDoc->m_vector_index;
+	draw.thickness = pDoc->m_thickness;
+	draw.r = pDoc->m_color_r;
+	draw.g = pDoc->m_color_g;
+	draw.b = pDoc->m_color_b;
+	draw.type = 13;
+	draw.brush_check = pDoc->m_brush_check;
+	draw.brush_r = pDoc->m_brush_color_r;
+	draw.brush_g = pDoc->m_brush_color_g;
+	draw.brush_b = pDoc->m_brush_color_b;
 	v.push_back(draw);
 	pDoc->m_vector_index++;
 	while (!s.empty()) {

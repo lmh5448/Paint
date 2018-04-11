@@ -214,6 +214,7 @@
     <Image Include="res\app4.ico" />
     <Image Include="res\app4Doc.ico" />
     <Image Include="res\buttons.bmp" />
+    <Image Include="res\empty.bmp" />
     <Image Include="res\filelarge.bmp" />
     <Image Include="res\filesmall.bmp" />
     <Image Include="res\icon1.ico" />

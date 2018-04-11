@@ -72,6 +72,8 @@ BEGIN_MESSAGE_MAP(Capp4Doc, CDocument)
 	ON_COMMAND(ID_SAVE_G, &Capp4Doc::OnSaveG)
 	ON_COMMAND(ID_SAVE_B, &Capp4Doc::OnSaveB)
 	ON_COMMAND(ID_SAVE_ONFILE, &Capp4Doc::OnSaveOnfile)
+	ON_COMMAND(ID_BINARY_CHECK, &Capp4Doc::OnBinaryCheck)
+	ON_UPDATE_COMMAND_UI(ID_BINARY_CHECK, &Capp4Doc::OnUpdateBinaryCheck)
 END_MESSAGE_MAP()
 
 
@@ -208,14 +210,11 @@ BOOL Capp4Doc::OnOpenDocument(LPCTSTR lpszPathName)
 	m_imagedata_size = m_height * m_step;
 	free(m_imagedata);
 	free(m_imagedata_temp);
-	free(m_imagedata_ori);
 	m_imagedata = new BYTE[m_imagedata_size];
 	m_imagedata_temp = new BYTE[m_imagedata_size];
 
 	File.Read(m_imagedata, m_imagedata_size);
 
-	m_imagedata_ori = new BYTE[m_imagedata_size];
-	memcpy(m_imagedata_ori, m_imagedata, m_imagedata_size);
 	File.Close();
 	m_bright = 0;
 	m_brightless = 0;
@@ -239,38 +238,6 @@ BOOL Capp4Doc::OnOpenDocument(LPCTSTR lpszPathName)
 
 	return TRUE;
 }
-
-
-BOOL Capp4Doc::OnSaveDocument(LPCTSTR lpszPathName)
-{
-	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
-	m_file_path = lpszPathName;
-	CFile File;
-	CFileDialog SaveDlg(FALSE, _T("BMP"), NULL, OFN_HIDEREADONLY);
-
-	if (SaveDlg.DoModal() == IDOK) {
-		File.Open(SaveDlg.GetPathName(), CFile::modeWrite | CFile::modeCreate);
-		File.Write(&m_file_header, sizeof(BITMAPFILEHEADER));
-		File.Write(&m_info_header, sizeof(BITMAPINFOHEADER));
-		
-		if (m_channels == 1) {
-			for (int i = 0; i < 256; i++) {
-				RGBQUAD GrayPalette = { i,i,i,0 };
-				File.Write(&GrayPalette, sizeof(RGBQUAD));
-			}
-		}
-
-		BITMAPINFO info_header;
-		info_header.bmiHeader = m_info_header;
-		HDC dc = GetDC(NULL);
-		GetDIBits(dc, m_Cbitmap, 0, m_height, m_imagedata, &info_header, DIB_RGB_COLORS);
-		File.Write(m_imagedata, m_imagedata_size);
-		File.Close();
-	}
-
-	return TRUE;
-}
-
 
 
 void Capp4Doc::Filter_avg() {
@@ -299,7 +266,7 @@ void Capp4Doc::Filter_avg() {
 					count_temp+=array[m][n];
 					sum_temp_r += array[m][n] * m_imagedata[((i+m-1)*m_step + (j+n-1) * m_channels) + 2];
 					sum_temp_g += array[m][n] * m_imagedata[((i+m-1)*m_step + (j+n-1) * m_channels) + 1];
-					sum_temp_b += array[m][n] * m_imagedata[(i*m_step + j * m_channels) + 0];
+					sum_temp_b += array[m][n] * m_imagedata[((i+m-1)*m_step + (j+n-1) * m_channels) + 0];
 				}
 			}
 			m_imagedata_temp[i*m_step + j * m_channels + 2] = CLIP( sum_temp_r / count_temp);
@@ -396,13 +363,113 @@ void Capp4Doc::Filter_histogram()
 	for (int i = 0; i < m_height; i++) {
 		for (int j = 0; j < m_width; j++) {
 			int index = i*m_step + j*m_channels;
-			int gray_value = (int)((m_imagedata[index + 0] * 114 + m_imagedata[index + 1] * 578 + m_imagedata[index + 0] * 308) / 1000);
+			int gray_value = (int)((m_imagedata[index + 0] * 114 + m_imagedata[index + 1] * 578 + m_imagedata[index + 2] * 308) / 1000);
 			int v = histogram_gray[gray_value] - gray_value;
 			m_imagedata[index + 0] = CLIP(m_imagedata[index + 0] + v);
 			m_imagedata[index + 1] = CLIP(m_imagedata[index + 1] + v);
 			m_imagedata[index + 2] = CLIP(m_imagedata[index + 2] + v);
 		}
 	}
+}
+
+void Capp4Doc::Filter_sharpening()
+{
+	int array_size = 3;
+	double array[3][3] = {
+		{ -1,-1,-1 },
+		{ -1, 8,-1 },
+		{ -1,-1,-1 }
+	};
+	double sum = 9.0;
+	memcpy(m_imagedata_temp, m_imagedata, m_imagedata_size);
+	for (int i = 0; i < m_height; i++) {
+		for (int j = 0; j < m_width; j++) {
+			double count_temp = 0;
+			double sum_temp_r = 0;
+			double sum_temp_g = 0;
+			double sum_temp_b = 0;
+			for (int m = 0; m < array_size; m++) {
+				for (int n = 0; n < array_size; n++) {
+					if ((m == 0 && i == 0) || (n == 0 && j == 0) || (m == 2 && i == m_height - 1) || (n == 2 && j == m_width - 1)) continue;
+					count_temp += array[m][n];
+					sum_temp_r += array[m][n] * m_imagedata[((i + m - 1)*m_step + (j + n - 1) * m_channels) + 2];
+					sum_temp_g += array[m][n] * m_imagedata[((i + m - 1)*m_step + (j + n - 1) * m_channels) + 1];
+					sum_temp_b += array[m][n] * m_imagedata[((i + m - 1)*m_step + (j + n - 1) * m_channels) + 0];
+				}
+			}
+			m_imagedata_temp[i*m_step + j * m_channels + 2] = CLIP(sum_temp_r / count_temp);
+			m_imagedata_temp[i*m_step + j * m_channels + 1] = CLIP(sum_temp_g / count_temp);
+			m_imagedata_temp[i*m_step + j * m_channels + 0] = CLIP(sum_temp_b / count_temp);
+		}
+	}
+	memcpy(m_imagedata, m_imagedata_temp, m_imagedata_size);
+	return;
+}
+
+void Capp4Doc::Filter_binary()
+{
+	int index;
+	for (int i = 0; i < m_height; i++) {
+		for (int j = 0; j < m_width; j++) {
+			index = i*m_step + j*m_channels;
+			int gray_value = (int)((m_imagedata[index + 0] * 114 + m_imagedata[index + 1] * 578 + m_imagedata[index + 2] * 308) / 1000);
+			if (gray_value>m_binary) {
+				m_imagedata[index + 0] = 255;
+				m_imagedata[index + 1] = 255;
+				m_imagedata[index + 2] = 255;
+			}
+			else {
+				m_imagedata[index + 0] = 0;
+				m_imagedata[index + 1] = 0;
+				m_imagedata[index + 2] = 0;
+			}
+		}
+	}
+	return;
+}
+
+void Capp4Doc::Filter_median()
+{
+	int index;
+	int size;
+	int i, j, n, m, k;
+	double temp;
+	vector<double> v;
+	vector<double> v1;
+	vector<Pair> v2;
+	for (i = 0; i < m_width; i++) {
+		for (j = 0; j < m_height; j++) {
+			size = 0;
+			v.clear();
+			v1.clear();
+			v2.clear();
+			for (n = -1; n < 2; n++) {
+				for (m = -1; m < 2; m++) {
+					if (i + n < 0 || i + n >= m_height || j + m < 0 || j + m >= m_width)continue;
+					size++;
+					index = (i + n)*m_step + (j + m)*m_channels;
+					temp = (m_imagedata[index + 0]*114 + m_imagedata[index + 1]*578 + m_imagedata[index + 2]*308)/1000;
+					v.push_back(temp);
+					v1.push_back(temp);
+					v2.push_back(Pair(i+n,j+m));
+				}
+			}
+			sort(v.begin(), v.end());
+			for (k = 0; k < size; k++) {
+				if (v1[k] == v[(int)(size/2)]) {
+					n = v2[k].x;
+					m = v2[k].y;
+					index = n*m_step + m*m_channels;
+					m_imagedata_temp[i*m_step + j*m_channels + 0] = m_imagedata[index + 0];
+					m_imagedata_temp[i*m_step + j*m_channels + 1] = m_imagedata[index + 1];
+					m_imagedata_temp[i*m_step + j*m_channels + 2] = m_imagedata[index + 2];
+					break;
+				}
+			}
+		}
+	}
+	memcpy(m_imagedata, m_imagedata_temp, m_imagedata_size);
+	return;
 }
 
 //void Capp4Doc::MyFloodFill(int x, int y, BYTE nr, BYTE ng, BYTE nb)
@@ -776,4 +843,20 @@ void Capp4Doc::OnSaveOnfile()
 
 	File.Close();
 	return;
+}
+
+
+
+void Capp4Doc::OnBinaryCheck()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	m_binary_check = !m_binary_check;
+	UpdateAllViews(NULL);
+}
+
+
+void Capp4Doc::OnUpdateBinaryCheck(CCmdUI *pCmdUI)
+{
+	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
+	pCmdUI->SetCheck(m_binary_check);
 }
