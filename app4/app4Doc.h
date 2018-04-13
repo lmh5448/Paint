@@ -12,6 +12,7 @@
 // app4Doc.h : Capp4Doc 클래스의 인터페이스
 //
 
+
 #pragma once
 
 class Capp4Doc : public CDocument
@@ -41,7 +42,7 @@ public:
 	int m_bright=0;
 	int m_brightless=1;
 	int m_filter_size = 10;
-	//1-연필, 2-선분, 3-사각형, 4-동그라미, 5-다각형, 6-지우개, 7-색채우기
+	//1연필 2선분 3사각형 4원 5지우개 6다각형 7색채우기 8히스토그램 필터 9블러링 10엔드인 11감마 12샤프닝 13미디안 14엣지검출
 	int m_state = 0;
 	int m_vector_index = 1;
 	int m_color_r=0;
@@ -56,6 +57,8 @@ public:
 	double m_gamma = 1.0;
 	BOOL m_binary_check = false;
 	int m_binary = 127;
+	int m_edge = 0;
+	BOOL m_messageBox = false;
 // 작업입니다.
 public:
 
@@ -99,6 +102,8 @@ public:
 	afx_msg void Filter_sharpening();
 	afx_msg void Filter_binary();
 	afx_msg void Filter_median();
+	afx_msg void Filter_edge();
+	afx_msg void Defect_Stain_inspection();
 	//사용안한다 기능은 똑같지만 속도차이가 어마어마함 -> ExtFloodFill FLOODFILLSURFACE
 	//afx_msg void MyFloodFill(int x, int y, BYTE nr, BYTE ng, BYTE nb);
 	COLORREF GetRGB(int x,int y);

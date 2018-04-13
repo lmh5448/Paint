@@ -31,6 +31,11 @@ public:
 	CRect m_rectCurHist;
 	int m_x = 0;
 	int m_y = 0;
+	int point_x1[100];
+	int point_y1[100];
+	int point_x2[100];
+	int point_y2[100];
+	int index = 0;
 // 작업입니다.
 public:
 
@@ -76,6 +81,17 @@ public:
 	afx_msg void OnSlider3();
 	afx_msg void OnSlider4();
 	afx_msg void OnFilterMedian();
+	afx_msg void OnEdgePrewittX();
+	afx_msg void OnEdgePrewittY();
+	afx_msg void OnEdgeSobelX();
+	afx_msg void OnEdgeSobelY();
+	afx_msg void OnEdgeEmboss1();
+	afx_msg void OnEdgeEmboss2();
+	afx_msg void OnEdgeLaplaican4();
+	afx_msg void OnEdgeLaplaican8();
+	afx_msg void OnEdgeUnsharp4();
+	afx_msg void OnEdgeUnsharp8();
+	afx_msg void OnButton11();
 };
 
 #ifndef _DEBUG  // app4View.cpp의 디버그 버전

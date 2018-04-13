@@ -35,11 +35,19 @@ struct Pair
 {
 	int x;
 	int y;
+	double v;
 	Pair(int x1, int y1) {
 		x = x1;
 		y = y1;
 	}
+	Pair(int x1, int y1, int v1) {
+		x = x1;
+		y = y1;
+		v = v1;
+	}
 };
+
+bool compare(Pair a, Pair b) { return a.v < b.v; }
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -434,41 +442,192 @@ void Capp4Doc::Filter_median()
 	int size;
 	int i, j, n, m, k;
 	double temp;
-	vector<double> v;
-	vector<double> v1;
-	vector<Pair> v2;
+	vector<Pair> v;
 	for (i = 0; i < m_height; i++) {
 		for (j = 0; j < m_width; j++) {
 			size = 0;
 			v.clear();
-			v1.clear();
-			v2.clear();
 			for (n = -1; n < 2; n++) {
 				for (m = -1; m < 2; m++) {
 					if (i + n < 0 || i + n >= m_height || j + m < 0 || j + m >= m_width)continue;
 					size++;
 					index = (i + n)*m_step + (j + m)*m_channels;
 					temp = (m_imagedata[index + 0]*114 + m_imagedata[index + 1]*578 + m_imagedata[index + 2]*308)/1000;
-					v.push_back(temp);
-					v1.push_back(temp);
-					v2.push_back(Pair(i + n, j + m));
+					v.push_back(Pair(i+n,j+m,temp));
 				}
 			}
-			sort(v.begin(), v.end());
-			for (k = 0; k < size; k++) {
-				if (v1[k] == v[(int)(size/2)]) {
-					n = v2[k].x;
-					m = v2[k].y;
-					index = n*m_step + m*m_channels;
-					m_imagedata_temp[i*m_step + j*m_channels + 0] = m_imagedata[index + 0];
-					m_imagedata_temp[i*m_step + j*m_channels + 1] = m_imagedata[index + 1];
-					m_imagedata_temp[i*m_step + j*m_channels + 2] = m_imagedata[index + 2];
-				}
-			}
+			sort(v.begin(), v.end(), compare);
+			n = v[size / 2].x;
+			m = v[size / 2].y;
+			m_imagedata_temp[i*m_step + j*m_channels + 0] = m_imagedata[n*m_step + m*m_channels + 0];
+			m_imagedata_temp[i*m_step + j*m_channels + 1] = m_imagedata[n*m_step + m*m_channels + 1];
+			m_imagedata_temp[i*m_step + j*m_channels + 2] = m_imagedata[n*m_step + m*m_channels + 2];
 		}
 	}
 	memcpy(m_imagedata, m_imagedata_temp, m_imagedata_size);
 	return;
+}
+
+void Capp4Doc::Filter_edge()
+{
+	int mask[10][3][3] = {
+		//0
+		{{ 1, 1, 1},
+		{ 0, 0, 0},
+		{-1,-1,-1}},
+		//1
+		{ { 1, 0, -1 },
+		{ 1, 0, -1 },
+		{ 1, 0, -1 } },
+		//2
+		{ { 1, 2, 1 },
+		{ 0, 0, 0 },
+		{ -1,-2,-1 } },
+		//3
+		{ { 1, 0,-1 },
+		{ 2, 0, -2 },
+		{ 1, 0,-1 } },
+		//4
+		{ { 1, 0, 0 },
+		{ 0, 0, 0 },
+		{ 0, 0,-1 } },
+		//5
+		{ { 0, 0, 1 },
+		{ 0, 0, 0 },
+		{ -1, 0, 0 } },
+		//6
+		{ { 0, 1, 0 },
+		{ 1, -4, 1 },
+		{  0, 1, 0 } },
+		//7
+		{ { 1, 1, 1 },
+		{ 1, -8, 1 },
+		{  1, 1, 1 } },
+		//8
+		{ { 0, -1, 0 },
+		{ -1, 5, -1 },
+		{ 0,-1, 0 } },
+		//9
+		{ { -1, -1, -1},
+		{ -1, 9, -1 },
+		{ -1,-1, -1 } }
+	};
+	int i, j, n, m;
+	int size, index1,index2;
+	int sum1,sum2;
+	for (i = 0; i < m_height; i++) {
+		for (j = 0; j < m_width; j++) {
+			size = 0;
+			index1 = i*m_step + j*m_channels;
+			sum1 = (int)((m_imagedata[index1 + 0]*114 + m_imagedata[index1 + 1]*578 + m_imagedata[index1 + 2]*308)/1000);
+			sum2 = 0;
+			for (n = -1; n < 2; n++) {
+				for (m = -1; m < 2; m++) {
+					if ((i + n) < 0 || (i + n) >= m_height || (j + m) < 0 || (j + m) >= m_width)continue;
+					index2 = (i + n)*m_step + (j + m)*m_channels;
+					sum2 += (int)((m_imagedata[index2 + 0]*114 + m_imagedata[index2 + 1]*578 + m_imagedata[index2 + 2]*308) / 1000) * (mask[m_edge][n+1][m+1]);
+				}
+			}
+			sum2 -= sum1;
+			m_imagedata_temp[index1 + 0] = CLIP(m_imagedata[index1 + 0] + sum2);
+			m_imagedata_temp[index1 + 1] = CLIP(m_imagedata[index1 + 1] + sum2);
+			m_imagedata_temp[index1 + 2] = CLIP(m_imagedata[index1 + 2] + sum2);
+		}
+	}
+	memcpy(m_imagedata, m_imagedata_temp, m_imagedata_size);
+}
+
+void Capp4Doc::Defect_Stain_inspection()
+{
+	Capp4View* pView = (Capp4View*)((CMainFrame*)AfxGetMainWnd())->GetActiveView();
+	
+	int i, j, n, m;
+	int index;
+	double sum = 0;
+	double sum_temp = 0;
+	double avg = 0;
+	double sdev = 0;
+	int size = m_height * m_width;
+	int** ar = new int*[m_height];
+	bool** ar_bool = new bool*[m_height];
+	for (i = 0; i < m_height; i++) {
+		ar[i] = new int[m_width];
+		ar_bool[i] = new bool[m_width];
+		ZeroMemory(ar_bool[i], m_width * sizeof(bool));
+	}
+
+	for (i = 0; i < m_height; i ++) {
+		for (j = 0; j < m_width; j ++) {
+			index = i*m_step + j*m_channels;
+			ar[i][j] = (m_imagedata[index + 0] + m_imagedata[index + 1] + m_imagedata[index + 2])/3;
+			if (j != 0 && (abs(ar[i][j]-ar[i][j-1])>40)) {
+				if (ar_bool[i][j] == false) { 
+					pView->point_x1[pView->index] = j - 15;
+					pView->point_y1[pView->index] = i - 15;
+					pView->point_x2[pView->index] = j + 15;
+					pView->point_y2[pView->index] = i + 15;
+					pView->index++;
+				}
+				if (ar_bool[i][j] == true)continue;
+				for (n = -10; n <= 10; n++) {
+					for (m = -10; m <= 10; m++) {
+						if (i + n < 0 || i + n >= m_height || j + m < 0 || j + m >= m_width)continue;
+						ar_bool[i + n][j + m] = true;
+					}
+				}
+			}
+		}
+	}
+	//for (i = 0; i < m_height; i += 24) {
+	//	for (j = 0; j < m_width; j += 24) {
+	//		//평균
+	//		sum = 0;
+	//		size = 0;
+	//		for (n = 0; n <= 96; n++) {
+	//			for (m = 0; m <= 96; m++) {
+	//				if (i + n >= m_height || j + m >= m_width)continue;
+	//				size++;
+	//				sum += ar[i+n][j+m];
+	//			}
+	//		}
+	//		avg = sum / size;
+	//		//표준편차
+	//		sdev = 0;
+	//		for (n = 0; n <= 96; n++) {
+	//			for (m = 0; m <= 96; m++) {
+	//				if (i + n >= m_height || j + m >= m_width)continue;
+	//				sdev += pow(ar[i + n][j + m]-avg, 2.0);
+	//			}
+	//		}
+	//		sdev /= size;
+	//		sdev = sqrt(sdev);
+
+	//		for (n = 0; n < 96; n += 3) {
+	//			for (m = 0; m < 96; m += 3) {
+	//				sum_temp = 0;
+	//				size = 0;
+	//				for (int x = 0; x <  3; x++) {
+	//					for (int y = 0; y < 3; y++) {
+	//						if (i + n + x >= m_height || j + m + y >= m_width)continue;
+	//						size++;
+	//						sum_temp += ar[i + n + x][j + m + y];
+	//					}
+	//				}
+	//				sum_temp /= size;
+	//				if (sum_temp < avg - sdev || sum_temp > avg + sdev) {
+	//					v.push_back(Pair(i+n+1,j+m+1));
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
+	/*for(Point temp : v){
+		TRACE("x : %d, y : %d\n",temp.y, temp.x);
+	}*/
+	if (m_messageBox==false && pView->index != 0) {
+		AfxMessageBox(L"defect 감지");
+		m_messageBox=true;
+	}
 }
 
 //void Capp4Doc::MyFloodFill(int x, int y, BYTE nr, BYTE ng, BYTE nb)

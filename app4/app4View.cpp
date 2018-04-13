@@ -12,6 +12,7 @@
 // app4View.cpp : Capp4View 클래스의 구현
 //
 
+
 #include "stdafx.h"
 // SHARED_HANDLERS는 미리 보기, 축소판 그림 및 검색 필터 처리기를 구현하는 ATL 프로젝트에서 정의할 수 있으며
 // 해당 프로젝트와 문서 코드를 공유하도록 해 줍니다.
@@ -26,6 +27,7 @@
 #include<vector>
 #include<stack>
 using namespace std;
+
 struct Draw_info
 {
 	int x1;
@@ -48,6 +50,7 @@ struct Draw_info
 	int brush_b;
 
 	double gamma_v;
+	int edge;
 };
 
 vector<Draw_info> v;
@@ -83,6 +86,17 @@ ON_COMMAND(ID_SLIDER2, &Capp4View::OnSlider2)
 ON_COMMAND(ID_SLIDER3, &Capp4View::OnSlider3)
 ON_COMMAND(ID_SLIDER4, &Capp4View::OnSlider4)
 ON_COMMAND(ID_FILTER_MEDIAN, &Capp4View::OnFilterMedian)
+ON_COMMAND(ID_EDGE_PREWITT_X, &Capp4View::OnEdgePrewittX)
+ON_COMMAND(ID_EDGE_PREWITT_Y, &Capp4View::OnEdgePrewittY)
+ON_COMMAND(ID_EDGE_SOBEL_X, &Capp4View::OnEdgeSobelX)
+ON_COMMAND(ID_EDGE_SOBEL_Y, &Capp4View::OnEdgeSobelY)
+ON_COMMAND(ID_EDGE_EMBOSS_1, &Capp4View::OnEdgeEmboss1)
+ON_COMMAND(ID_EDGE_EMBOSS_2, &Capp4View::OnEdgeEmboss2)
+ON_COMMAND(ID_EDGE_LAPLAICAN_4, &Capp4View::OnEdgeLaplaican4)
+ON_COMMAND(ID_EDGE_LAPLAICAN_8, &Capp4View::OnEdgeLaplaican8)
+ON_COMMAND(ID_EDGE_UNSHARP_4, &Capp4View::OnEdgeUnsharp4)
+ON_COMMAND(ID_EDGE_UNSHARP_8, &Capp4View::OnEdgeUnsharp8)
+ON_COMMAND(ID_BUTTON11, &Capp4View::OnButton11)
 END_MESSAGE_MAP()
 
 // Capp4View 생성/소멸
@@ -90,7 +104,6 @@ END_MESSAGE_MAP()
 Capp4View::Capp4View()
 {
 	// TODO: 여기에 생성 코드를 추가합니다.
-
 }
 
 Capp4View::~Capp4View()
@@ -150,7 +163,7 @@ void Capp4View::OnDraw(CDC* pDC)
 		else { memDC.SelectStockObject(NULL_BRUSH); }
 
 		//도형그리기 redo undo 때문에 계속 추가
-		//1연필 2선분 3사각형 4원 5지우개 6다각형 7색채우기 8히스토그램 필터 9블러링 10엔드인 11감마 12샤프닝 
+		//1연필 2선분 3사각형 4원 5지우개 6다각형 7색채우기 8히스토그램 필터 9블러링 10엔드인 11감마 12샤프닝 13미디안 14엣지검출
 		if(v[i].type==1 || v[i].type==2 || v[i].type==5 || v[i].type==6){
 			memDC.MoveTo(point1);
 			memDC.LineTo(point2);
@@ -198,6 +211,21 @@ void Capp4View::OnDraw(CDC* pDC)
 			pDoc->Filter_median();
 			SetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
 		}
+		else if (v[i].type == 14) {
+			GetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
+			pDoc->m_edge = v[i].edge;
+			pDoc->Filter_edge();
+			SetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
+		}
+		else if (v[i].type == 15) {
+			index = 0;
+			GetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
+			pDoc->Defect_Stain_inspection();
+			SetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
+			for (int i = 0; i < index; i++) {
+				memDC.Rectangle(point_x1[i], pDoc->m_height - point_y1[i], point_x2[i], pDoc->m_height - point_y2[i]);
+			}
+		}
 
 		pen.DeleteObject();
 		brush.DeleteObject();
@@ -218,7 +246,24 @@ void Capp4View::OnDraw(CDC* pDC)
 		SetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
 	}
 	////
-	pDC->BitBlt(0, 0, pDoc->m_width, pDoc->m_height, &memDC, 0, 0, SRCCOPY);
+	if (pDoc->m_height>1080 && pDoc->m_width>1920) {
+		if (pDoc->m_height / 1080 > pDoc->m_width / 1920) {
+			pDC->StretchBlt(0, 0, (pDoc->m_width/pDoc->m_height)*1080, 1080, &memDC, 0, 0, pDoc->m_width, pDoc->m_height, SRCCOPY);
+		}
+		else {
+			pDC->StretchBlt(0, 0, 1920, (pDoc->m_height/pDoc->m_width)*1920, &memDC, 0, 0, pDoc->m_width, pDoc->m_height, SRCCOPY);
+		}
+	}
+	else if (pDoc->m_width>1920) {
+		pDC->StretchBlt(0, 0, 1920, (pDoc->m_height / pDoc->m_width) * 1920, &memDC, 0, 0, pDoc->m_width, pDoc->m_height, SRCCOPY);
+	}
+	else if (pDoc->m_height>1080) {
+		pDC->StretchBlt(0, 0, (pDoc->m_width / pDoc->m_height) * 1080, 1080, &memDC, 0, 0, pDoc->m_width, pDoc->m_height, SRCCOPY);
+	}
+	else {
+		pDC->BitBlt(0, 0, pDoc->m_width, pDoc->m_height, &memDC, 0, 0, SRCCOPY);
+	}
+	
 	//UI가 갱신이안되는건 이거때문이였음 invalidate 하는역할 보고 넘어가자
 	//Invalidate(false);
 	
@@ -861,6 +906,325 @@ void Capp4View::OnFilterMedian()
 	draw.b = pDoc->m_color_b;
 	draw.type = 13;
 	draw.brush_check = pDoc->m_brush_check;
+	draw.brush_r = pDoc->m_brush_color_r;
+	draw.brush_g = pDoc->m_brush_color_g;
+	draw.brush_b = pDoc->m_brush_color_b;
+	v.push_back(draw);
+	pDoc->m_vector_index++;
+	while (!s.empty()) {
+		s.pop();
+	}
+	Invalidate(false);
+}
+
+
+void Capp4View::OnEdgePrewittX()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	Draw_info draw;
+	draw.x1 = 0;
+	draw.y1 = 0;
+	draw.x2 = 0;
+	draw.y2 = 0;
+	draw.check = pDoc->m_vector_index;
+	draw.thickness = pDoc->m_thickness;
+	draw.r = pDoc->m_color_r;
+	draw.g = pDoc->m_color_g;
+	draw.b = pDoc->m_color_b;
+	draw.type = 14;
+	draw.brush_check = pDoc->m_brush_check;
+	draw.brush_r = pDoc->m_brush_color_r;
+	draw.brush_g = pDoc->m_brush_color_g;
+	draw.brush_b = pDoc->m_brush_color_b;
+	draw.edge = 0;
+	v.push_back(draw);
+	pDoc->m_vector_index++;
+	while (!s.empty()) {
+		s.pop();
+	}
+	Invalidate(false);
+}
+
+
+void Capp4View::OnEdgePrewittY()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	Draw_info draw;
+	draw.x1 = 0;
+	draw.y1 = 0;
+	draw.x2 = 0;
+	draw.y2 = 0;
+	draw.check = pDoc->m_vector_index;
+	draw.thickness = pDoc->m_thickness;
+	draw.r = pDoc->m_color_r;
+	draw.g = pDoc->m_color_g;
+	draw.b = pDoc->m_color_b;
+	draw.type = 14;
+	draw.brush_check = pDoc->m_brush_check;
+	draw.brush_r = pDoc->m_brush_color_r;
+	draw.brush_g = pDoc->m_brush_color_g;
+	draw.brush_b = pDoc->m_brush_color_b;
+	draw.edge = 1;
+	v.push_back(draw);
+	pDoc->m_vector_index++;
+	while (!s.empty()) {
+		s.pop();
+	}
+	Invalidate(false);
+}
+
+
+void Capp4View::OnEdgeSobelX()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	Draw_info draw;
+	draw.x1 = 0;
+	draw.y1 = 0;
+	draw.x2 = 0;
+	draw.y2 = 0;
+	draw.check = pDoc->m_vector_index;
+	draw.thickness = pDoc->m_thickness;
+	draw.r = pDoc->m_color_r;
+	draw.g = pDoc->m_color_g;
+	draw.b = pDoc->m_color_b;
+	draw.type = 14;
+	draw.brush_check = pDoc->m_brush_check;
+	draw.brush_r = pDoc->m_brush_color_r;
+	draw.brush_g = pDoc->m_brush_color_g;
+	draw.brush_b = pDoc->m_brush_color_b;
+	draw.edge = 2;
+	v.push_back(draw);
+	pDoc->m_vector_index++;
+	while (!s.empty()) {
+		s.pop();
+	}
+	Invalidate(false);
+}
+
+
+void Capp4View::OnEdgeSobelY()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	Draw_info draw;
+	draw.x1 = 0;
+	draw.y1 = 0;
+	draw.x2 = 0;
+	draw.y2 = 0;
+	draw.check = pDoc->m_vector_index;
+	draw.thickness = pDoc->m_thickness;
+	draw.r = pDoc->m_color_r;
+	draw.g = pDoc->m_color_g;
+	draw.b = pDoc->m_color_b;
+	draw.type = 14;
+	draw.brush_check = pDoc->m_brush_check;
+	draw.brush_r = pDoc->m_brush_color_r;
+	draw.brush_g = pDoc->m_brush_color_g;
+	draw.brush_b = pDoc->m_brush_color_b;
+	draw.edge = 3;
+	v.push_back(draw);
+	pDoc->m_vector_index++;
+	while (!s.empty()) {
+		s.pop();
+	}
+	Invalidate(false);
+}
+
+
+void Capp4View::OnEdgeEmboss1()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	Draw_info draw;
+	draw.x1 = 0;
+	draw.y1 = 0;
+	draw.x2 = 0;
+	draw.y2 = 0;
+	draw.check = pDoc->m_vector_index;
+	draw.thickness = pDoc->m_thickness;
+	draw.r = pDoc->m_color_r;
+	draw.g = pDoc->m_color_g;
+	draw.b = pDoc->m_color_b;
+	draw.type = 14;
+	draw.brush_check = pDoc->m_brush_check;
+	draw.brush_r = pDoc->m_brush_color_r;
+	draw.brush_g = pDoc->m_brush_color_g;
+	draw.brush_b = pDoc->m_brush_color_b;
+	draw.edge = 4;
+	v.push_back(draw);
+	pDoc->m_vector_index++;
+	while (!s.empty()) {
+		s.pop();
+	}
+	Invalidate(false);
+}
+
+
+void Capp4View::OnEdgeEmboss2()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	Draw_info draw;
+	draw.x1 = 0;
+	draw.y1 = 0;
+	draw.x2 = 0;
+	draw.y2 = 0;
+	draw.check = pDoc->m_vector_index;
+	draw.thickness = pDoc->m_thickness;
+	draw.r = pDoc->m_color_r;
+	draw.g = pDoc->m_color_g;
+	draw.b = pDoc->m_color_b;
+	draw.type = 14;
+	draw.brush_check = pDoc->m_brush_check;
+	draw.brush_r = pDoc->m_brush_color_r;
+	draw.brush_g = pDoc->m_brush_color_g;
+	draw.brush_b = pDoc->m_brush_color_b;
+	draw.edge = 5;
+	v.push_back(draw);
+	pDoc->m_vector_index++;
+	while (!s.empty()) {
+		s.pop();
+	}
+	Invalidate(false);
+}
+
+
+void Capp4View::OnEdgeLaplaican4()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	Draw_info draw;
+	draw.x1 = 0;
+	draw.y1 = 0;
+	draw.x2 = 0;
+	draw.y2 = 0;
+	draw.check = pDoc->m_vector_index;
+	draw.thickness = pDoc->m_thickness;
+	draw.r = pDoc->m_color_r;
+	draw.g = pDoc->m_color_g;
+	draw.b = pDoc->m_color_b;
+	draw.type = 14;
+	draw.brush_check = pDoc->m_brush_check;
+	draw.brush_r = pDoc->m_brush_color_r;
+	draw.brush_g = pDoc->m_brush_color_g;
+	draw.brush_b = pDoc->m_brush_color_b;
+	draw.edge = 6;
+	v.push_back(draw);
+	pDoc->m_vector_index++;
+	while (!s.empty()) {
+		s.pop();
+	}
+	Invalidate(false);
+}
+
+
+void Capp4View::OnEdgeLaplaican8()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	Draw_info draw;
+	draw.x1 = 0;
+	draw.y1 = 0;
+	draw.x2 = 0;
+	draw.y2 = 0;
+	draw.check = pDoc->m_vector_index;
+	draw.thickness = pDoc->m_thickness;
+	draw.r = pDoc->m_color_r;
+	draw.g = pDoc->m_color_g;
+	draw.b = pDoc->m_color_b;
+	draw.type = 14;
+	draw.brush_check = pDoc->m_brush_check;
+	draw.brush_r = pDoc->m_brush_color_r;
+	draw.brush_g = pDoc->m_brush_color_g;
+	draw.brush_b = pDoc->m_brush_color_b;
+	draw.edge = 7;
+	v.push_back(draw);
+	pDoc->m_vector_index++;
+	while (!s.empty()) {
+		s.pop();
+	}
+	Invalidate(false);
+}
+
+
+void Capp4View::OnEdgeUnsharp4()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	Draw_info draw;
+	draw.x1 = 0;
+	draw.y1 = 0;
+	draw.x2 = 0;
+	draw.y2 = 0;
+	draw.check = pDoc->m_vector_index;
+	draw.thickness = pDoc->m_thickness;
+	draw.r = pDoc->m_color_r;
+	draw.g = pDoc->m_color_g;
+	draw.b = pDoc->m_color_b;
+	draw.type = 14;
+	draw.brush_check = pDoc->m_brush_check;
+	draw.brush_r = pDoc->m_brush_color_r;
+	draw.brush_g = pDoc->m_brush_color_g;
+	draw.brush_b = pDoc->m_brush_color_b;
+	draw.edge = 8;
+	v.push_back(draw);
+	pDoc->m_vector_index++;
+	while (!s.empty()) {
+		s.pop();
+	}
+	Invalidate(false);
+}
+
+
+void Capp4View::OnEdgeUnsharp8()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	Draw_info draw;
+	draw.x1 = 0;
+	draw.y1 = 0;
+	draw.x2 = 0;
+	draw.y2 = 0;
+	draw.check = pDoc->m_vector_index;
+	draw.thickness = pDoc->m_thickness;
+	draw.r = pDoc->m_color_r;
+	draw.g = pDoc->m_color_g;
+	draw.b = pDoc->m_color_b;
+	draw.type = 14;
+	draw.brush_check = pDoc->m_brush_check;
+	draw.brush_r = pDoc->m_brush_color_r;
+	draw.brush_g = pDoc->m_brush_color_g;
+	draw.brush_b = pDoc->m_brush_color_b;
+	draw.edge = 9;
+	v.push_back(draw);
+	pDoc->m_vector_index++;
+	while (!s.empty()) {
+		s.pop();
+	}
+	Invalidate(false);
+}
+
+
+void Capp4View::OnButton11()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	pDoc->m_messageBox = false;
+	Draw_info draw;
+	draw.x1 = 0;
+	draw.y1 = 0;
+	draw.x2 = 0;
+	draw.y2 = 0;
+	draw.check = pDoc->m_vector_index;
+	draw.thickness = 3;
+	draw.r = 255;
+	draw.g = 0;
+	draw.b = 0;
+	draw.type = 15;
+	draw.brush_check = false;
 	draw.brush_r = pDoc->m_brush_color_r;
 	draw.brush_g = pDoc->m_brush_color_g;
 	draw.brush_b = pDoc->m_brush_color_b;

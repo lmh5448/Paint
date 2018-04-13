@@ -74,13 +74,25 @@
 #define ID_SAVE_ONFILE                  32823
 #define ID_BINARY_CHECK                 32828
 #define ID_SLIDER4                      32829
+#define ID_EDGE_PREWITT_X               32830
+#define ID_EDGE_PREWITT_Y               32831
+#define ID_EDGE_SOBEL_X                 32832
+#define ID_EDGE_SOBEL_Y                 32833
+#define ID_EDGE_EMBOSS_2                32834
+#define ID_EDGE_LAPLAICAN_4             32835
+#define ID_EDGE_EMBOSS_1                32836
+#define ID_EDGE_LAPLAICAN_8             32837
+#define ID_EDGE_UNSHARP_4               32838
+#define ID_EDGE_UNSHARP_8               32839
+#define ID_BUTTON11                     32840
+#define ID_BUTTON18                     32841
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        319
-#define _APS_NEXT_COMMAND_VALUE         32830
+#define _APS_NEXT_COMMAND_VALUE         32842
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           310
 #endif
