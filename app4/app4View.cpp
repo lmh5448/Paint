@@ -246,6 +246,12 @@ void Capp4View::OnDraw(CDC* pDC)
 		SetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
 	}
 	////
+	//축소 출력할때 깨짐 현상 제거 모드
+	SetStretchBltMode(pDC->m_hDC, COLORONCOLOR);
+	//크기를 반으로 줄일때
+	/*if (pDoc->m_width > 1920 || pDoc->m_height > 1080) {
+		pDC->StretchBlt(0, 0, pDoc->m_width / 2, pDoc->m_height / 2, &memDC, 0, 0, pDoc->m_width, pDoc->m_height, SRCCOPY);
+	}*/
 	if (pDoc->m_height>1080 && pDoc->m_width>1920) {
 		if (pDoc->m_height / 1080 > pDoc->m_width / 1920) {
 			pDC->StretchBlt(0, 0, (pDoc->m_width/pDoc->m_height)*1080, 1080, &memDC, 0, 0, pDoc->m_width, pDoc->m_height, SRCCOPY);
@@ -622,6 +628,27 @@ void Capp4View::OnInitialUpdate()
 	CSize sizeTotal;
 	sizeTotal.cx = pDoc->m_width;
 	sizeTotal.cy = pDoc->m_height;
+	if (pDoc->m_height>1080 && pDoc->m_width>1920) {
+		if (pDoc->m_height / 1080 > pDoc->m_width / 1920) {
+			sizeTotal.cx *= (1080/pDoc->m_height);
+			sizeTotal.cy = 1080;
+		}
+		else {
+			sizeTotal.cx = 1920;
+			sizeTotal.cy *= (1920 / pDoc->m_width);
+		}
+	}
+	else if (pDoc->m_width>1920) {
+		sizeTotal.cy *= (1920 / pDoc->m_width);
+	}
+	else if (pDoc->m_height>1080) {
+		sizeTotal.cx *= (1080 / pDoc->m_height);
+	}
+	//크기를 반으로만 줄일때
+	/*if (pDoc->m_width > 1920 || pDoc->m_height > 1080) {
+		sizeTotal.cx /= 2;
+		sizeTotal.cy /= 2;
+	}*/
 	SetScrollSizes(MM_TEXT, sizeTotal);
 
 	Invalidate();
