@@ -163,7 +163,8 @@ void Capp4View::OnDraw(CDC* pDC)
 		else { memDC.SelectStockObject(NULL_BRUSH); }
 
 		//도형그리기 redo undo 때문에 계속 추가
-		//1연필 2선분 3사각형 4원 5지우개 6다각형 7색채우기 8히스토그램 필터 9블러링 10엔드인 11감마 12샤프닝 13미디안 14엣지검출
+		//1연필 2선분 3사각형 4원 5지우개 6다각형 7색채우기 8히스토그램 필터
+		//9블러링 10엔드인 11감마 12샤프닝 13미디안 14엣지검출 15defect검출
 		if(v[i].type==1 || v[i].type==2 || v[i].type==5 || v[i].type==6){
 			memDC.MoveTo(point1);
 			memDC.LineTo(point2);
@@ -176,7 +177,6 @@ void Capp4View::OnDraw(CDC* pDC)
 		}
 		else if (v[i].type == 7) {
 			GetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
-			//pDoc->MyFloodFill(point1.x, point1.y, v[i].brush_r, v[i].brush_g, v[i].brush_b);
 			COLORREF color = pDoc->GetRGB(point1.x, point1.y);
 			memDC.ExtFloodFill(point1.x, point1.y, color, FLOODFILLSURFACE);
 		}
@@ -220,7 +220,7 @@ void Capp4View::OnDraw(CDC* pDC)
 		else if (v[i].type == 15) {
 			index = 0;
 			GetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
-			pDoc->Defect_Stain_inspection();
+			pDoc->Defect_inspection();
 			SetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
 			for (int i = 0; i < index; i++) {
 				memDC.Rectangle(point_x1[i], pDoc->m_height - point_y1[i], point_x2[i], pDoc->m_height - point_y2[i]);
@@ -639,10 +639,12 @@ void Capp4View::OnInitialUpdate()
 		}
 	}
 	else if (pDoc->m_width>1920) {
+		sizeTotal.cx *= (1920 / pDoc->m_width);
 		sizeTotal.cy *= (1920 / pDoc->m_width);
 	}
 	else if (pDoc->m_height>1080) {
 		sizeTotal.cx *= (1080 / pDoc->m_height);
+		sizeTotal.cy *= (1080 / pDoc->m_height);
 	}
 	//크기를 반으로만 줄일때
 	/*if (pDoc->m_width > 1920 || pDoc->m_height > 1080) {

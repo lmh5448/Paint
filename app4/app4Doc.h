@@ -41,7 +41,6 @@ public:
 	BOOL m_brightless_check = false;
 	int m_bright=0;
 	int m_brightless=1;
-	int m_filter_size = 10;
 	//1연필 2선분 3사각형 4원 5지우개 6다각형 7색채우기 8히스토그램 필터 9블러링 10엔드인 11감마 12샤프닝 13미디안 14엣지검출
 	int m_state = 0;
 	int m_vector_index = 1;
@@ -103,7 +102,7 @@ public:
 	afx_msg void Filter_binary();
 	afx_msg void Filter_median();
 	afx_msg void Filter_edge();
-	afx_msg void Defect_Stain_inspection();
+	afx_msg void Defect_inspection();
 	//사용안한다 기능은 똑같지만 속도차이가 어마어마함 -> ExtFloodFill FLOODFILLSURFACE
 	//afx_msg void MyFloodFill(int x, int y, BYTE nr, BYTE ng, BYTE nb);
 	COLORREF GetRGB(int x,int y);

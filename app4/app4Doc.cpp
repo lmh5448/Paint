@@ -24,6 +24,9 @@
 #include <propkey.h>
 #include <cmath>
 #include <queue>
+#include <locale.h>
+#include <time.h>
+#include<string>
 #include"app4View.h"
 #include"MainFrm.h"
 
@@ -244,6 +247,18 @@ BOOL Capp4Doc::OnOpenDocument(LPCTSTR lpszPathName)
 	m_Cbitmap_ori.GetBitmap(&m_bmpinfo);
 	//////////////////////////////////
 
+	m_state = 0;
+	m_bright = 0;
+	m_brightless = 1;
+	m_vector_index = 1;
+	m_thickness = 5;
+	m_gamma = 1.0;
+	m_binary = 127;
+	m_edge = 0;
+	m_brush_check = false;
+	m_gamma_check = false;
+	m_binary_check = false;
+	m_messageBox = false;
 	return TRUE;
 }
 
@@ -537,7 +552,7 @@ void Capp4Doc::Filter_edge()
 	memcpy(m_imagedata, m_imagedata_temp, m_imagedata_size);
 }
 
-void Capp4Doc::Defect_Stain_inspection()
+void Capp4Doc::Defect_inspection()
 {
 	Capp4View* pView = (Capp4View*)((CMainFrame*)AfxGetMainWnd())->GetActiveView();
 	
@@ -556,12 +571,12 @@ void Capp4Doc::Defect_Stain_inspection()
 		ZeroMemory(ar_bool[i], m_width * sizeof(bool));
 	}
 
-	for (i = 0; i < m_height; i ++) {
-		for (j = 0; j < m_width; j ++) {
+	for (i = 0; i < m_height; i++) {
+		for (j = 0; j < m_width; j++) {
 			index = i*m_step + j*m_channels;
-			ar[i][j] = (m_imagedata[index + 0] + m_imagedata[index + 1] + m_imagedata[index + 2])/3;
-			if (j != 0 && (abs(ar[i][j]-ar[i][j-1])>40)) {
-				if (ar_bool[i][j] == false) { 
+			ar[i][j] = (m_imagedata[index + 0] + m_imagedata[index + 1] + m_imagedata[index + 2]) / 3;
+			if (j != 0 && (abs(ar[i][j] - ar[i][j - 1]) > 40)) {
+				if (ar_bool[i][j] == false) {
 					pView->point_x1[pView->index] = j - 15;
 					pView->point_y1[pView->index] = i - 15;
 					pView->point_x2[pView->index] = j + 15;
@@ -569,8 +584,8 @@ void Capp4Doc::Defect_Stain_inspection()
 					pView->index++;
 				}
 				if (ar_bool[i][j] == true)continue;
-				for (n = -10; n <= 10; n++) {
-					for (m = -10; m <= 10; m++) {
+				for (n = -15; n <= 15; n++) {
+					for (m = -15; m <= 15; m++) {
 						if (i + n < 0 || i + n >= m_height || j + m < 0 || j + m >= m_width)continue;
 						ar_bool[i + n][j + m] = true;
 					}
@@ -578,6 +593,12 @@ void Capp4Doc::Defect_Stain_inspection()
 			}
 		}
 	}
+	for (i = 0; i < m_height; i++) {
+		free(ar[i]);
+		free(ar_bool[i]);
+	}
+	free(ar);
+	free(ar_bool);
 	//for (i = 0; i < m_height; i += 24) {
 	//	for (j = 0; j < m_width; j += 24) {
 	//		//Æò±Õ
@@ -627,6 +648,64 @@ void Capp4Doc::Defect_Stain_inspection()
 	if (m_messageBox==false && pView->index != 0) {
 		AfxMessageBox(L"defect °¨Áö");
 		m_messageBox=true;
+		TRACE("path : %s\n", m_file_path);
+		TRACE("length : %d\n", m_file_path.GetLength());
+		
+		//CFile File;
+		//int index = 0;
+		//for (int i = m_file_path.GetLength() - 1; i >= 0; i--) {
+		//	if (m_file_path[i] == '\\') {
+		//		index = i;
+		//		break;
+		//	}
+		//}
+		//File.Open(m_file_path.Left(index) + "\\log.csv", CFile::modeWrite | CFile::modeCreate);
+		//char buf[20] = { NULL };
+		//
+		//for (int i = 0; i < pView->index; i++) {
+		//	ZeroMemory(buf, 20);
+		//	sprintf_s(buf,"%d, %d \r\n",pView->point_x1[i]+15,pView->point_y1[i]+15);
+		//	/*TRACE("%s\n", m_file_path);*/
+		//	File.Write(buf, 20);
+		//}
+		//File.Close();
+		int index = 0;
+		for (int i = m_file_path.GetLength() - 1; i >= 0; i--) {
+			if (m_file_path[i] == '\\') {
+				index = i;
+				break;
+			}
+		}
+		FILE* fp;
+		char* char_str;
+		time_t timer;
+		struct tm* t;
+		timer = time(NULL);
+		t = NULL;
+		localtime_s(t,&timer);
+		string s;
+		CString cs;
+
+		/*s += to_string(t->tm_year + 1900);
+		s += " ";
+		s += to_string(t->tm_mon + 1);
+		s += " ";
+		s += to_string(t->tm_mday);
+
+		cs += to_string(t->tm_year + 1900);
+		cs += " ";
+		cs += to_string(t->tm_mon + 1);
+		cs += " ";
+		cs += to_string(t->tm_mday);*/
+
+		fopen_s(&fp, m_file_path.Left(index) + "\\log.csv", "w+");
+		_wsetlocale(LC_ALL, L"korean");
+		for (int i = 0; i < pView->index; i++) {
+			fwprintf(fp, _T("%s, %d, %d,\n"),m_file_path, pView->point_x1[i] + 15, pView->point_y1[i] + 15);
+		}
+		
+		fclose(fp);
+		fp = NULL;
 	}
 }
 
