@@ -189,6 +189,7 @@
     <ClInclude Include="app4.h" />
     <ClInclude Include="app4Doc.h" />
     <ClInclude Include="app4View.h" />
+    <ClInclude Include="GetIpDlg.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
@@ -198,6 +199,7 @@
     <ClCompile Include="app4.cpp" />
     <ClCompile Include="app4Doc.cpp" />
     <ClCompile Include="app4View.cpp" />
+    <ClCompile Include="GetIpDlg.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

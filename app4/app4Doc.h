@@ -91,7 +91,6 @@ protected:
 #endif // SHARED_HANDLERS
 public:
 	virtual BOOL OnOpenDocument(LPCTSTR lpszPathName);
-//	virtual BOOL OnSaveDocument(LPCTSTR lpszPathName);
 	afx_msg void Filter_avg();
 	afx_msg void Filter_auto_contrast();
 	afx_msg void Filter_bright();

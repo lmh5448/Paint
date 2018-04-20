@@ -25,7 +25,7 @@
 #include <cmath>
 #include <queue>
 #include <locale.h>
-#include <time.h>
+#include <ctime>
 #include<string>
 #include"app4View.h"
 #include"MainFrm.h"
@@ -648,7 +648,7 @@ void Capp4Doc::Defect_inspection()
 	if (m_messageBox==false && pView->index != 0) {
 		AfxMessageBox(L"defect °¨Áö");
 		m_messageBox=true;
-		TRACE("path : %s\n", m_file_path);
+		TRACE(L"path : %s\n", m_file_path);
 		TRACE("length : %d\n", m_file_path.GetLength());
 		
 		//CFile File;
@@ -677,33 +677,21 @@ void Capp4Doc::Defect_inspection()
 			}
 		}
 		FILE* fp;
-		char* char_str;
-		time_t timer;
-		struct tm* t;
-		timer = time(NULL);
-		t = NULL;
-		localtime_s(t,&timer);
-		string s;
-		CString cs;
-
-		/*s += to_string(t->tm_year + 1900);
-		s += " ";
-		s += to_string(t->tm_mon + 1);
-		s += " ";
-		s += to_string(t->tm_mday);
-
-		cs += to_string(t->tm_year + 1900);
-		cs += " ";
-		cs += to_string(t->tm_mon + 1);
-		cs += " ";
-		cs += to_string(t->tm_mday);*/
-
+		CTime time = CTime::GetCurrentTime();
+		/*CString cs;
+		cs += to_string(time.GetYear()).c_str();
+		cs += "/";
+		cs += to_string(time.GetMonth()).c_str();
+		cs += "/";
+		cs += to_string(time.GetDay()).c_str();*/
+		char time_buf[30];
+		//ZeroMemory(time_buf, 30 * sizeof(char));
+		sprintf_s(time_buf, "%04d/%02d/%02d", time.GetYear(), time.GetMonth(), time.GetDay());
 		fopen_s(&fp, m_file_path.Left(index) + "\\log.csv", "w+");
 		_wsetlocale(LC_ALL, L"korean");
 		for (int i = 0; i < pView->index; i++) {
-			fwprintf(fp, _T("%s, %d, %d,\n"),m_file_path, pView->point_x1[i] + 15, pView->point_y1[i] + 15);
+			fprintf(fp,"%S, %d, %d, %s,\n",m_file_path, pView->point_x1[i] + 15, m_height - (pView->point_y1[i] + 15),time_buf);
 		}
-		
 		fclose(fp);
 		fp = NULL;
 	}

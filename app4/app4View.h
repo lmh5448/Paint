@@ -14,6 +14,8 @@
 
 #pragma once
 
+#define MAX_CLIENT_COUNT	10
+
 class Capp4View : public CScrollView
 {
 protected: // serialization에서만 만들어집니다.
@@ -36,6 +38,11 @@ public:
 	int point_x2[100];
 	int point_y2[100];
 	int index = 0;
+
+	SOCKET m_listen_socket;
+	CString m_ip;
+	SOCKET m_client_list[MAX_CLIENT_COUNT];
+	int m_client_count;
 // 작업입니다.
 public:
 
@@ -92,6 +99,10 @@ public:
 	afx_msg void OnEdgeUnsharp4();
 	afx_msg void OnEdgeUnsharp8();
 	afx_msg void OnButton11();
+	afx_msg void OnSocketOpen();
+	void AcceptProcess(SOCKET parm_h_socket);
+	void ClientCloseProcess(SOCKET parm_h_socket, char parm_force_flag);
+	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
 };
 
 #ifndef _DEBUG  // app4View.cpp의 디버그 버전
