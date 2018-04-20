@@ -1396,7 +1396,6 @@ LRESULT Capp4View::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 
 			char* temp;
 			temp = strtok(buf, " ");
-			//AfxMessageBox(L"buf : " + CString(buf));
 
 			if (strcmp(buf, "start") == 0) {
 				Capp4View::OnButton11();

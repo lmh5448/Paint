@@ -599,76 +599,13 @@ void Capp4Doc::Defect_inspection()
 	}
 	free(ar);
 	free(ar_bool);
-	//for (i = 0; i < m_height; i += 24) {
-	//	for (j = 0; j < m_width; j += 24) {
-	//		//평균
-	//		sum = 0;
-	//		size = 0;
-	//		for (n = 0; n <= 96; n++) {
-	//			for (m = 0; m <= 96; m++) {
-	//				if (i + n >= m_height || j + m >= m_width)continue;
-	//				size++;
-	//				sum += ar[i+n][j+m];
-	//			}
-	//		}
-	//		avg = sum / size;
-	//		//표준편차
-	//		sdev = 0;
-	//		for (n = 0; n <= 96; n++) {
-	//			for (m = 0; m <= 96; m++) {
-	//				if (i + n >= m_height || j + m >= m_width)continue;
-	//				sdev += pow(ar[i + n][j + m]-avg, 2.0);
-	//			}
-	//		}
-	//		sdev /= size;
-	//		sdev = sqrt(sdev);
 
-	//		for (n = 0; n < 96; n += 3) {
-	//			for (m = 0; m < 96; m += 3) {
-	//				sum_temp = 0;
-	//				size = 0;
-	//				for (int x = 0; x <  3; x++) {
-	//					for (int y = 0; y < 3; y++) {
-	//						if (i + n + x >= m_height || j + m + y >= m_width)continue;
-	//						size++;
-	//						sum_temp += ar[i + n + x][j + m + y];
-	//					}
-	//				}
-	//				sum_temp /= size;
-	//				if (sum_temp < avg - sdev || sum_temp > avg + sdev) {
-	//					v.push_back(Pair(i+n+1,j+m+1));
-	//				}
-	//			}
-	//		}
-	//	}
-	//}
-	/*for(Point temp : v){
-		TRACE("x : %d, y : %d\n",temp.y, temp.x);
-	}*/
 	if (m_messageBox==false && pView->index != 0) {
 		AfxMessageBox(L"defect 감지");
 		m_messageBox=true;
 		TRACE(L"path : %s\n", m_file_path);
 		TRACE("length : %d\n", m_file_path.GetLength());
-		
-		//CFile File;
-		//int index = 0;
-		//for (int i = m_file_path.GetLength() - 1; i >= 0; i--) {
-		//	if (m_file_path[i] == '\\') {
-		//		index = i;
-		//		break;
-		//	}
-		//}
-		//File.Open(m_file_path.Left(index) + "\\log.csv", CFile::modeWrite | CFile::modeCreate);
-		//char buf[20] = { NULL };
-		//
-		//for (int i = 0; i < pView->index; i++) {
-		//	ZeroMemory(buf, 20);
-		//	sprintf_s(buf,"%d, %d \r\n",pView->point_x1[i]+15,pView->point_y1[i]+15);
-		//	/*TRACE("%s\n", m_file_path);*/
-		//	File.Write(buf, 20);
-		//}
-		//File.Close();
+
 		int index = 0;
 		for (int i = m_file_path.GetLength() - 1; i >= 0; i--) {
 			if (m_file_path[i] == '\\') {
@@ -685,10 +622,10 @@ void Capp4Doc::Defect_inspection()
 		cs += "/";
 		cs += to_string(time.GetDay()).c_str();*/
 		char time_buf[30];
-		//ZeroMemory(time_buf, 30 * sizeof(char));
 		sprintf_s(time_buf, "%04d/%02d/%02d", time.GetYear(), time.GetMonth(), time.GetDay());
 		fopen_s(&fp, m_file_path.Left(index) + "\\log.csv", "w+");
 		_wsetlocale(LC_ALL, L"korean");
+		if (fp == NULL)return;
 		for (int i = 0; i < pView->index; i++) {
 			fprintf(fp,"%S, %d, %d, %s,\n",m_file_path, pView->point_x1[i] + 15, m_height - (pView->point_y1[i] + 15),time_buf);
 		}
