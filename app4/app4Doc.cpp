@@ -1018,3 +1018,29 @@ void Capp4Doc::OnUpdateBinaryCheck(CCmdUI *pCmdUI)
 	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
 	pCmdUI->SetCheck(m_binary_check);
 }
+
+
+BOOL Capp4Doc::OnSaveDocument(LPCTSTR lpszPathName)
+{
+	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
+	CFile File;
+	File.Open(lpszPathName, CFile::modeWrite | CFile::modeCreate);
+	File.Write(&m_file_header, sizeof(BITMAPFILEHEADER));
+	File.Write(&m_info_header, sizeof(BITMAPINFOHEADER));
+
+	if (m_channels == 1) {
+		for (int i = 0; i < 256; i++) {
+			RGBQUAD GrayPalette = { i,i,i,0 };
+			File.Write(&GrayPalette, sizeof(RGBQUAD));
+		}
+	}
+
+	BITMAPINFO info_header;
+	info_header.bmiHeader = m_info_header;
+	HDC dc = GetDC(NULL);
+	GetDIBits(dc, m_Cbitmap, 0, m_height, m_imagedata, &info_header, DIB_RGB_COLORS);
+	File.Write(m_imagedata, m_imagedata_size);
+
+	File.Close();
+	return CDocument::OnSaveDocument(lpszPathName);
+}

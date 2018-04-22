@@ -131,4 +131,5 @@ public:
 	afx_msg void OnSaveOnfile();
 	afx_msg void OnBinaryCheck();
 	afx_msg void OnUpdateBinaryCheck(CCmdUI *pCmdUI);
+	virtual BOOL OnSaveDocument(LPCTSTR lpszPathName);
 };
