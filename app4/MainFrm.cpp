@@ -308,5 +308,3 @@ void CMainFrame::OnUpdateButton8(CCmdUI *pCmdUI)
 		pCmdUI->SetCheck(false);
 	}
 }
-
-

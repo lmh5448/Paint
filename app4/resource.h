@@ -36,6 +36,9 @@
 #define IDS_EDIT_MENU                   306
 #define IDR_RIBBON                      307
 #define IDB_BITMAP1                     317
+#define IDD_DIALOG1                     321
+#define IDCANCEL                        1000
+#define IDC_IP_EDIT                     1001
 #define ID_WRITE_PASTEASHYPERLINK       32770
 #define ID_32771                        32771
 #define ID_BUTTON2                      32772
@@ -85,15 +88,18 @@
 #define ID_EDGE_UNSHARP_4               32838
 #define ID_EDGE_UNSHARP_8               32839
 #define ID_BUTTON11                     32840
-#define ID_BUTTON18                     32841
+#define ID_SOCKET_OPEN                  32841
+#define ID_BUTTON19                     32842
+#define ID_BUTTON18                     32843
+#define ID_BUTTON20                     32844
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        319
-#define _APS_NEXT_COMMAND_VALUE         32842
-#define _APS_NEXT_CONTROL_VALUE         1000
+#define _APS_NEXT_RESOURCE_VALUE        323
+#define _APS_NEXT_COMMAND_VALUE         32845
+#define _APS_NEXT_CONTROL_VALUE         1002
 #define _APS_NEXT_SYMED_VALUE           310
 #endif
 #endif

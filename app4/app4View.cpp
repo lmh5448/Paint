@@ -23,9 +23,14 @@
 #include "app4Doc.h"
 #include "app4View.h"
 #include "MainFrm.h"
-
+#include <WinSock2.h>
 #include<vector>
 #include<stack>
+#include"GetIpDlg.h"
+
+
+#pragma comment(lib, "ws2_32.lib")
+#pragma warning(disable : 4996)
 using namespace std;
 
 struct Draw_info
@@ -97,6 +102,7 @@ ON_COMMAND(ID_EDGE_LAPLAICAN_8, &Capp4View::OnEdgeLaplaican8)
 ON_COMMAND(ID_EDGE_UNSHARP_4, &Capp4View::OnEdgeUnsharp4)
 ON_COMMAND(ID_EDGE_UNSHARP_8, &Capp4View::OnEdgeUnsharp8)
 ON_COMMAND(ID_BUTTON11, &Capp4View::OnButton11)
+ON_COMMAND(ID_SOCKET_OPEN, &Capp4View::OnSocketOpen)
 END_MESSAGE_MAP()
 
 // Capp4View 생성/소멸
@@ -104,6 +110,7 @@ END_MESSAGE_MAP()
 Capp4View::Capp4View()
 {
 	// TODO: 여기에 생성 코드를 추가합니다.
+	m_client_count = 0;
 }
 
 Capp4View::~Capp4View()
@@ -163,7 +170,8 @@ void Capp4View::OnDraw(CDC* pDC)
 		else { memDC.SelectStockObject(NULL_BRUSH); }
 
 		//도형그리기 redo undo 때문에 계속 추가
-		//1연필 2선분 3사각형 4원 5지우개 6다각형 7색채우기 8히스토그램 필터 9블러링 10엔드인 11감마 12샤프닝 13미디안 14엣지검출
+		//1연필 2선분 3사각형 4원 5지우개 6다각형 7색채우기 8히스토그램 필터
+		//9블러링 10엔드인 11감마 12샤프닝 13미디안 14엣지검출 15defect검출
 		if(v[i].type==1 || v[i].type==2 || v[i].type==5 || v[i].type==6){
 			memDC.MoveTo(point1);
 			memDC.LineTo(point2);
@@ -176,7 +184,6 @@ void Capp4View::OnDraw(CDC* pDC)
 		}
 		else if (v[i].type == 7) {
 			GetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
-			//pDoc->MyFloodFill(point1.x, point1.y, v[i].brush_r, v[i].brush_g, v[i].brush_b);
 			COLORREF color = pDoc->GetRGB(point1.x, point1.y);
 			memDC.ExtFloodFill(point1.x, point1.y, color, FLOODFILLSURFACE);
 		}
@@ -220,7 +227,7 @@ void Capp4View::OnDraw(CDC* pDC)
 		else if (v[i].type == 15) {
 			index = 0;
 			GetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
-			pDoc->Defect_Stain_inspection();
+			pDoc->Defect_inspection();
 			SetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
 			for (int i = 0; i < index; i++) {
 				memDC.Rectangle(point_x1[i], pDoc->m_height - point_y1[i], point_x2[i], pDoc->m_height - point_y2[i]);
@@ -639,10 +646,12 @@ void Capp4View::OnInitialUpdate()
 		}
 	}
 	else if (pDoc->m_width>1920) {
+		sizeTotal.cx *= (1920 / pDoc->m_width);
 		sizeTotal.cy *= (1920 / pDoc->m_width);
 	}
 	else if (pDoc->m_height>1080) {
 		sizeTotal.cx *= (1080 / pDoc->m_height);
+		sizeTotal.cy *= (1080 / pDoc->m_height);
 	}
 	//크기를 반으로만 줄일때
 	/*if (pDoc->m_width > 1920 || pDoc->m_height > 1080) {
@@ -1261,4 +1270,161 @@ void Capp4View::OnButton11()
 		s.pop();
 	}
 	Invalidate(false);
+}
+
+
+void Capp4View::OnSocketOpen()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	//소켓 선언
+	WSADATA wsadata;
+	WSAStartup(MAKEWORD(2, 2), &wsadata);
+
+	m_listen_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (m_listen_socket == -1) {
+		AfxMessageBox(_T("socket 생성 에러"));
+		return;
+	}
+
+	//소켓 bind시 들어갈 설정
+	sockaddr_in srv_addr = { 0 };
+	srv_addr.sin_family = AF_INET;
+	GetIpDlg getip;
+	bool check = true;
+	char buf[16];
+	//ip입력받을때 ip가맞는지확인
+	do {
+		if (getip.DoModal() == IDOK) {
+			m_ip = getip.GetIp();
+			if (m_ip == "") {
+				m_ip = "127.0.0.1";
+			}
+			sprintf_s(buf, "%S", m_ip);
+			if (inet_addr(buf) == -1) {
+				check = true;
+			}
+			else {
+				check = false;
+			}
+		}
+		else {
+			return;
+		}
+	} while (check);
+	srv_addr.sin_addr.s_addr = inet_addr(buf);
+	srv_addr.sin_port = htons(20001);
+
+	int re;
+	re = bind(m_listen_socket, (LPSOCKADDR)&srv_addr, sizeof(struct sockaddr_in));
+	if (re == -1) {
+		AfxMessageBox(_T("bind 에러"));
+		return;
+	}
+
+	//listen 해주기
+	re = listen(m_listen_socket, 5);
+	if (re == -1) {
+		AfxMessageBox(_T("listen 에러"));
+		return;
+	}
+
+	//비동기식으로 하기
+	WSAAsyncSelect(m_listen_socket, m_hWnd, 27001, FD_ACCEPT);
+
+	AfxMessageBox(_T("Socket 생성! IP : ") + m_ip);
+	//AfxMessageBox(m_ip);
+	return;
+}
+
+void Capp4View::AcceptProcess(SOCKET parm_h_socket) {
+	if (MAX_CLIENT_COUNT > m_client_count) {
+		//m_listen_socket 핸들값과 동일
+		SOCKET h_socket = parm_h_socket;
+
+		struct sockaddr_in client_addr;
+		int len = sizeof(client_addr);
+		m_client_list[m_client_count] = accept(h_socket, (LPSOCKADDR)&client_addr, &len);
+		//소켓을 비동기식으로 바꿈
+		WSAAsyncSelect(m_client_list[m_client_count], m_hWnd, 27002, FD_READ | FD_CLOSE);
+		m_client_count++;
+
+		CString ip_address;
+		ip_address = inet_ntoa(client_addr.sin_addr);
+		MessageBox(ip_address, L"새로운 클라이언트가 접속했습니다. : ", MB_OK);
+
+	}
+	else {
+		//클라이언트가 더붙을려고할때 더이상붙을수없도록하는 코드나 현상황을 알려주는 메세지를 보내주는 코드 작성란
+	}
+}
+
+void Capp4View::ClientCloseProcess(SOCKET parm_h_socket, char parm_force_flag)
+{
+	if (parm_force_flag == 1) {
+		//환경설정 끊었을때 어떻게 할지
+		LINGER temp_linger = { TRUE,0 };//의미는 들어오는 데이터상관없이 끊어버리겠다.
+		setsockopt(parm_h_socket, SOL_SOCKET, SO_LINGER, (char*)&temp_linger, sizeof(temp_linger));
+	}
+	closesocket(parm_h_socket);
+	for (int i = 0; i < m_client_count; i++) {
+		if (m_client_list[i] == parm_h_socket) {
+			m_client_count--;
+			if (i != m_client_count) {
+				m_client_list[i] = m_client_list[m_client_count];
+			}
+			break;
+		}
+	}
+}
+
+LRESULT Capp4View::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
+{
+	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
+	if (27001 == message) {
+		AcceptProcess((SOCKET)wParam);
+	}
+	else if (27002 == message) {
+		//FD_READ, FD_CLOSE 
+		//소켓으로 들어온 정보가 데이터를 보내준건지 아니면 끊어진것인지 확인하는 코드
+		SOCKET h_socket = (SOCKET)wParam;
+		if (WSAGETSELECTEVENT(lParam) == FD_READ) {
+			//WSAAsyncSelect(h_socket, m_hWnd, 27002, FD_CLOSE);
+
+			char buf[256] = { 0 };
+
+			recv(h_socket, buf, 256, 0);
+
+			char* temp;
+			temp = strtok(buf, " ");
+
+			if (strcmp(buf, "start") == 0) {
+				Capp4View::OnButton11();
+			}
+			else if (strcmp(temp, "open") == 0) {
+				//AfxMessageBox(L"1 : " + CString(temp));
+				temp = strtok(NULL, " ");
+				//AfxMessageBox(L"2 : " + CString(temp));
+				Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+				BOOL check = pDoc->OnOpenDocument(CString(temp));
+				Invalidate(true);
+				CString response;
+				if (check) {
+					response = "OK";
+				}
+				else {
+					response = "NO";
+				}
+				sprintf(buf, "%S", response);
+				send(h_socket, buf, 256, 0);
+			}
+			else {
+				AfxMessageBox(L"다른말들어옴 : "+(CString)buf);
+			}
+		}
+		else {
+			//FD_CLOSE
+			ClientCloseProcess(h_socket,0);
+		}
+	}
+	return CScrollView::WindowProc(message, wParam, lParam);
 }

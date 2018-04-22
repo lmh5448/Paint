@@ -24,6 +24,9 @@
 #include <propkey.h>
 #include <cmath>
 #include <queue>
+#include <locale.h>
+#include <ctime>
+#include<string>
 #include"app4View.h"
 #include"MainFrm.h"
 
@@ -244,6 +247,18 @@ BOOL Capp4Doc::OnOpenDocument(LPCTSTR lpszPathName)
 	m_Cbitmap_ori.GetBitmap(&m_bmpinfo);
 	//////////////////////////////////
 
+	m_state = 0;
+	m_bright = 0;
+	m_brightless = 1;
+	m_vector_index = 1;
+	m_thickness = 5;
+	m_gamma = 1.0;
+	m_binary = 127;
+	m_edge = 0;
+	m_brush_check = false;
+	m_gamma_check = false;
+	m_binary_check = false;
+	m_messageBox = false;
 	return TRUE;
 }
 
@@ -537,7 +552,7 @@ void Capp4Doc::Filter_edge()
 	memcpy(m_imagedata, m_imagedata_temp, m_imagedata_size);
 }
 
-void Capp4Doc::Defect_Stain_inspection()
+void Capp4Doc::Defect_inspection()
 {
 	Capp4View* pView = (Capp4View*)((CMainFrame*)AfxGetMainWnd())->GetActiveView();
 	
@@ -556,12 +571,12 @@ void Capp4Doc::Defect_Stain_inspection()
 		ZeroMemory(ar_bool[i], m_width * sizeof(bool));
 	}
 
-	for (i = 0; i < m_height; i ++) {
-		for (j = 0; j < m_width; j ++) {
+	for (i = 0; i < m_height; i++) {
+		for (j = 0; j < m_width; j++) {
 			index = i*m_step + j*m_channels;
-			ar[i][j] = (m_imagedata[index + 0] + m_imagedata[index + 1] + m_imagedata[index + 2])/3;
-			if (j != 0 && (abs(ar[i][j]-ar[i][j-1])>40)) {
-				if (ar_bool[i][j] == false) { 
+			ar[i][j] = (m_imagedata[index + 0] + m_imagedata[index + 1] + m_imagedata[index + 2]) / 3;
+			if (j != 0 && (abs(ar[i][j] - ar[i][j - 1]) > 40)) {
+				if (ar_bool[i][j] == false) {
 					pView->point_x1[pView->index] = j - 15;
 					pView->point_y1[pView->index] = i - 15;
 					pView->point_x2[pView->index] = j + 15;
@@ -569,8 +584,8 @@ void Capp4Doc::Defect_Stain_inspection()
 					pView->index++;
 				}
 				if (ar_bool[i][j] == true)continue;
-				for (n = -10; n <= 10; n++) {
-					for (m = -10; m <= 10; m++) {
+				for (n = -15; n <= 15; n++) {
+					for (m = -15; m <= 15; m++) {
 						if (i + n < 0 || i + n >= m_height || j + m < 0 || j + m >= m_width)continue;
 						ar_bool[i + n][j + m] = true;
 					}
@@ -578,55 +593,44 @@ void Capp4Doc::Defect_Stain_inspection()
 			}
 		}
 	}
-	//for (i = 0; i < m_height; i += 24) {
-	//	for (j = 0; j < m_width; j += 24) {
-	//		//평균
-	//		sum = 0;
-	//		size = 0;
-	//		for (n = 0; n <= 96; n++) {
-	//			for (m = 0; m <= 96; m++) {
-	//				if (i + n >= m_height || j + m >= m_width)continue;
-	//				size++;
-	//				sum += ar[i+n][j+m];
-	//			}
-	//		}
-	//		avg = sum / size;
-	//		//표준편차
-	//		sdev = 0;
-	//		for (n = 0; n <= 96; n++) {
-	//			for (m = 0; m <= 96; m++) {
-	//				if (i + n >= m_height || j + m >= m_width)continue;
-	//				sdev += pow(ar[i + n][j + m]-avg, 2.0);
-	//			}
-	//		}
-	//		sdev /= size;
-	//		sdev = sqrt(sdev);
+	for (i = 0; i < m_height; i++) {
+		free(ar[i]);
+		free(ar_bool[i]);
+	}
+	free(ar);
+	free(ar_bool);
 
-	//		for (n = 0; n < 96; n += 3) {
-	//			for (m = 0; m < 96; m += 3) {
-	//				sum_temp = 0;
-	//				size = 0;
-	//				for (int x = 0; x <  3; x++) {
-	//					for (int y = 0; y < 3; y++) {
-	//						if (i + n + x >= m_height || j + m + y >= m_width)continue;
-	//						size++;
-	//						sum_temp += ar[i + n + x][j + m + y];
-	//					}
-	//				}
-	//				sum_temp /= size;
-	//				if (sum_temp < avg - sdev || sum_temp > avg + sdev) {
-	//					v.push_back(Pair(i+n+1,j+m+1));
-	//				}
-	//			}
-	//		}
-	//	}
-	//}
-	/*for(Point temp : v){
-		TRACE("x : %d, y : %d\n",temp.y, temp.x);
-	}*/
 	if (m_messageBox==false && pView->index != 0) {
 		AfxMessageBox(L"defect 감지");
 		m_messageBox=true;
+		TRACE(L"path : %s\n", m_file_path);
+		TRACE("length : %d\n", m_file_path.GetLength());
+
+		int index = 0;
+		for (int i = m_file_path.GetLength() - 1; i >= 0; i--) {
+			if (m_file_path[i] == '\\') {
+				index = i;
+				break;
+			}
+		}
+		FILE* fp;
+		CTime time = CTime::GetCurrentTime();
+		/*CString cs;
+		cs += to_string(time.GetYear()).c_str();
+		cs += "/";
+		cs += to_string(time.GetMonth()).c_str();
+		cs += "/";
+		cs += to_string(time.GetDay()).c_str();*/
+		char time_buf[30];
+		sprintf_s(time_buf, "%04d/%02d/%02d", time.GetYear(), time.GetMonth(), time.GetDay());
+		fopen_s(&fp, m_file_path.Left(index) + "\\log.csv", "w+");
+		_wsetlocale(LC_ALL, L"korean");
+		if (fp == NULL)return;
+		for (int i = 0; i < pView->index; i++) {
+			fprintf(fp,"%S, %d, %d, %s,\n",m_file_path, pView->point_x1[i] + 15, m_height - (pView->point_y1[i] + 15),time_buf);
+		}
+		fclose(fp);
+		fp = NULL;
 	}
 }
 
