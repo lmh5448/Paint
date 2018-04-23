@@ -58,6 +58,7 @@ public:
 	int m_binary = 127;
 	int m_edge = 0;
 	BOOL m_messageBox = false;
+	BOOL m_messageBox_stain = false;
 // 작업입니다.
 public:
 

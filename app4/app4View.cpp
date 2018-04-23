@@ -235,13 +235,15 @@ void Capp4View::OnDraw(CDC* pDC)
 			}
 		}
 		else if (v[i].type == 16) {
-			//index = 0;
+			stain_index = 0;
 			GetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
 			pDoc->Stain_inspection();
 			SetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
-			/*for (int i = 0; i < index; i++) {
-				memDC.Rectangle(point_x1[i], pDoc->m_height - point_y1[i], point_x2[i], pDoc->m_height - point_y2[i]);
-			}*/
+			if (stain_index >= 10) {
+				for (int i = 0; i < stain_index; i++) {
+					memDC.Rectangle(stain_point_x1[i], pDoc->m_height - stain_point_y1[i], stain_point_x2[i], pDoc->m_height - stain_point_y2[i]);
+				}
+			}
 		}
 
 		pen.DeleteObject();

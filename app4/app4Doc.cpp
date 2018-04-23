@@ -259,7 +259,7 @@ BOOL Capp4Doc::OnOpenDocument(LPCTSTR lpszPathName)
 	m_gamma_check = false;
 	m_binary_check = false;
 	m_messageBox = false;
-
+	m_messageBox_stain = false;
 	Capp4View* pView = (Capp4View*)(((CMainFrame*)AfxGetMainWnd())->GetActiveView());
 
 	for (int i = 0; i < pView->m_client_count; i++) {
@@ -642,19 +642,94 @@ void Capp4Doc::Stain_inspection()
 	Capp4View* pView = (Capp4View*)((CMainFrame*)AfxGetMainWnd())->GetActiveView();
 	int i, j, n, m;
 	int index;
-	int quad_width = m_width/4;
+	/*int quad_width = m_width/4;
 	int quad_height = m_height/4;
 	int hq_width = m_width / 8;
-	int hq_height = m_height / 8;
+	int hq_height = m_height / 8;*/
+	int div_width = m_width / 12;
+	int div_height = m_height / 12;
 	int quad_size;
 	int size;
 	double sum;
 	double sum_temp;
 	double avg;
 	double sdev;
+	double check[3][3];
+	int check_count[3][3];
 	sum = 0;
 	size = 0;
-	for (i = 0; i < m_width; i += quad_width) {
+
+	//배열
+	int** ar = new int*[div_height];
+	bool** ar_bool = new bool*[div_height];
+	for (i = 0; i < div_height; i++) {
+		ar[i] = new int[div_width];
+		ar_bool[i] = new bool[div_width];
+		ZeroMemory(ar[i], div_width * sizeof(int));
+		ZeroMemory(ar_bool[i], div_width * sizeof(bool));
+	}
+	//최근 생각
+	for (i = 0; i < m_height; i++) {
+		for (j = 0; j < m_width; j++) {
+			index = i*m_step + j*m_channels;
+			sum_temp = 0;
+			sum_temp += m_imagedata[index + 0] * 114;
+			sum_temp += m_imagedata[index + 1] * 578;
+			sum_temp += m_imagedata[index + 2] * 308;
+			sum_temp /= 1000;
+			ar[i / 12][j / 12] += sum_temp;
+		}
+	}
+	
+	for (i = 4; i < div_height-4; i ++) {
+		for (j = 4; j < div_width-4; j ++) {
+			for (n = 0; n < 3; n++) {
+				for (m = 0; m < 3; m++) {
+					check[n][m] = 0;
+					check_count[n][m] = 0;
+				}
+			}
+			for (n = -4; n < 8; n++) {
+				for (m = -4; m < 8; m++) {
+					if ((i + n) < 0 || (i + n) >= div_height || (j + m) < 0 || (j + m) >= div_width)continue;
+					int index_x = (n<0 ? n - 3 : n) / 4 + 1;
+					int index_y = (m<0 ? m - 3 : m) / 4 + 1;
+					check[index_x][index_y] += ar[i+n][j+m];
+					check_count[index_x][index_y]++;
+				}
+			}
+			for (n = 0; n < 3; n++) {
+				for (m = 0; m < 3; m++) {
+					check[n][m] /= check_count[n][m];
+				}
+			}
+			for (n = 0; n < 3; n++) {
+				for (m = 0; m < 3; m++) {
+					if (abs(check[n][m] - check[1][1])>500) {
+						if (pView->stain_index >= 9999)continue;
+						pView->stain_point_x1[pView->stain_index] = j*12;
+						pView->stain_point_y1[pView->stain_index] = i*12;
+						pView->stain_point_x2[pView->stain_index] = (j+4)*12;
+						pView->stain_point_y2[pView->stain_index] = (i+4)*12;
+						pView->stain_index++;
+					}
+				}
+			}
+		}
+	}
+	for (i = 0; i < div_height; i++) {
+		free(ar[i]);
+		free(ar_bool[i]);
+	}
+	free(ar);
+	free(ar_bool);
+
+	if (m_messageBox_stain == false && pView->stain_index>=10) {
+		m_messageBox_stain = true;
+		AfxMessageBox(L"stain 감지");
+	}
+	//영역별로 평균,표준편차 구해서 이외의 범위 값들 변경후 보기
+	/*for (i = 0; i < m_width; i += quad_width) {
 		for (j = 0; j < m_height; j += quad_height) {
 			quad_size = 0;
 			sum = 0;
@@ -708,34 +783,6 @@ void Capp4Doc::Stain_inspection()
 						m_imagedata[index + 2] = 255;
 					}
 				}
-			}
-		}
-	}
-	/*for (i = 0; i < m_width; i++) {
-		for (j = 0; j < m_height; j++) {
-			size++;
-			index = i*m_channels + j*m_step;
-			sum += m_imagedata[index + 1];
-		}
-	}
-	avg = sum / size;
-	sum_temp = 0;
-	for (i = 0; i < m_width; i++) {
-		for (j = 0; j < m_height; j++) {
-			index = i*m_channels + j*m_step;
-			sum_temp += pow((m_imagedata[index + 1]-avg),2.0);
-		}
-	}
-	sdev = sum_temp / size;
-
-	for (i = 0; i < m_width; i++) {
-		for (j = 0; j < m_height; j++) {
-			index = i*m_channels + j*m_step;
-			if (abs(m_imagedata[index + 1] - avg) < sdev) {
-				
-			}
-			else {
-				
 			}
 		}
 	}*/

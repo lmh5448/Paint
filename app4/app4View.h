@@ -39,6 +39,12 @@ public:
 	int point_y2[100];
 	int index = 0;
 
+	int stain_point_x1[10000];
+	int stain_point_y1[10000];
+	int stain_point_x2[10000];
+	int stain_point_y2[10000];
+	int stain_index = 0;
+
 	SOCKET m_listen_socket;
 	CString m_ip;
 	SOCKET m_client_list[MAX_CLIENT_COUNT];
