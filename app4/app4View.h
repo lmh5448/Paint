@@ -103,6 +103,9 @@ public:
 	void AcceptProcess(SOCKET parm_h_socket);
 	void ClientCloseProcess(SOCKET parm_h_socket, char parm_force_flag);
 	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+	afx_msg void OnButton19();
+	void Capp4View::SendOK(SOCKET temp_socket);
+	void Capp4View::SendNO(SOCKET temp_socket);
 };
 
 #ifndef _DEBUG  // app4View.cpp의 디버그 버전

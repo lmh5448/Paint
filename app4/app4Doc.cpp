@@ -259,6 +259,13 @@ BOOL Capp4Doc::OnOpenDocument(LPCTSTR lpszPathName)
 	m_gamma_check = false;
 	m_binary_check = false;
 	m_messageBox = false;
+
+	Capp4View* pView = (Capp4View*)(((CMainFrame*)AfxGetMainWnd())->GetActiveView());
+
+	for (int i = 0; i < pView->m_client_count; i++) {
+		pView->SendOK(pView->m_client_list[i]);
+	}
+
 	return TRUE;
 }
 
@@ -558,10 +565,6 @@ void Capp4Doc::Defect_inspection()
 	
 	int i, j, n, m;
 	int index;
-	double sum = 0;
-	double sum_temp = 0;
-	double avg = 0;
-	double sdev = 0;
 	int size = m_height * m_width;
 	int** ar = new int*[m_height];
 	bool** ar_bool = new bool*[m_height];
@@ -608,7 +611,7 @@ void Capp4Doc::Defect_inspection()
 
 		int index = 0;
 		for (int i = m_file_path.GetLength() - 1; i >= 0; i--) {
-			if (m_file_path[i] == '\\') {
+			if (m_file_path[i] == '.') {
 				index = i;
 				break;
 			}
@@ -622,16 +625,120 @@ void Capp4Doc::Defect_inspection()
 		cs += "/";
 		cs += to_string(time.GetDay()).c_str();*/
 		char time_buf[30];
-		sprintf_s(time_buf, "%04d/%02d/%02d", time.GetYear(), time.GetMonth(), time.GetDay());
-		fopen_s(&fp, m_file_path.Left(index) + "\\log.csv", "w+");
+		sprintf_s(time_buf, "%04d_%02d_%02d", time.GetYear(), time.GetMonth(), time.GetDay());
+		fopen_s(&fp, m_file_path.Left(index) + L"_Defect_log_" + time_buf + L".csv", "w+");
 		_wsetlocale(LC_ALL, L"korean");
 		if (fp == NULL)return;
 		for (int i = 0; i < pView->index; i++) {
-			fprintf(fp,"%S, %d, %d, %s,\n",m_file_path, pView->point_x1[i] + 15, m_height - (pView->point_y1[i] + 15),time_buf);
+			fprintf(fp,"%s, %S, %d, %d, %s,\n", "Defect", m_file_path, pView->point_x1[i] + 15, m_height - (pView->point_y1[i] + 15),time_buf);
 		}
 		fclose(fp);
 		fp = NULL;
 	}
+}
+
+void Capp4Doc::Stain_inspection()
+{
+	Capp4View* pView = (Capp4View*)((CMainFrame*)AfxGetMainWnd())->GetActiveView();
+	int i, j, n, m;
+	int index;
+	int quad_width = m_width/4;
+	int quad_height = m_height/4;
+	int hq_width = m_width / 8;
+	int hq_height = m_height / 8;
+	int quad_size;
+	int size;
+	double sum;
+	double sum_temp;
+	double avg;
+	double sdev;
+	sum = 0;
+	size = 0;
+	for (i = 0; i < m_width; i += quad_width) {
+		for (j = 0; j < m_height; j += quad_height) {
+			quad_size = 0;
+			sum = 0;
+			sum_temp = 0;
+			for (n = 0; n < quad_width; n++) {
+				for (m = 0; m < quad_height; m++) {
+					if (i + n >= m_width || j + m >= m_height)continue;
+					quad_size++;
+					index = (i + n)*m_channels + (j + m)*m_step;
+					sum_temp = 0;
+					sum_temp += m_imagedata[index + 0]*114;
+					sum_temp += m_imagedata[index + 1]*578;
+					sum_temp += m_imagedata[index + 2]*308;
+					sum_temp /= 1000;
+					sum += sum_temp;
+				}
+			}
+			avg = sum / quad_size;
+			sdev = 0;
+			for (n = 0; n < quad_width; n++) {
+				for (m = 0; m < quad_height; m++) {
+					if (i + n >= m_width || j + m >= m_height)continue;
+					index = (i + n)*m_channels + (j + m)*m_step;
+					sum_temp = 0;
+					sum_temp += m_imagedata[index + 0] * 114;
+					sum_temp += m_imagedata[index + 1] * 578;
+					sum_temp += m_imagedata[index + 2] * 308;
+					sum_temp /= 1000;
+					sdev += pow((sum_temp-avg),2.0);
+				}
+			}
+			sdev /= quad_size;
+
+			for (n = 0; n < quad_width; n++) {
+				for (m = 0; m < quad_height; m++) {
+					if (i + n >= m_width || j + m >= m_height)continue;
+					index = (i + n)*m_channels + (j + m)*m_step;
+					sum_temp = 0;
+					sum_temp += m_imagedata[index + 0] * 114;
+					sum_temp += m_imagedata[index + 1] * 578;
+					sum_temp += m_imagedata[index + 2] * 308;
+					sum_temp /= 1000;
+					if (sum_temp < avg - sdev/2) {
+						m_imagedata[index + 0] = 0;
+						m_imagedata[index + 1] = 0;
+						m_imagedata[index + 2] = 0;
+					}
+					else {
+						m_imagedata[index + 0] = 255;
+						m_imagedata[index + 1] = 255;
+						m_imagedata[index + 2] = 255;
+					}
+				}
+			}
+		}
+	}
+	/*for (i = 0; i < m_width; i++) {
+		for (j = 0; j < m_height; j++) {
+			size++;
+			index = i*m_channels + j*m_step;
+			sum += m_imagedata[index + 1];
+		}
+	}
+	avg = sum / size;
+	sum_temp = 0;
+	for (i = 0; i < m_width; i++) {
+		for (j = 0; j < m_height; j++) {
+			index = i*m_channels + j*m_step;
+			sum_temp += pow((m_imagedata[index + 1]-avg),2.0);
+		}
+	}
+	sdev = sum_temp / size;
+
+	for (i = 0; i < m_width; i++) {
+		for (j = 0; j < m_height; j++) {
+			index = i*m_channels + j*m_step;
+			if (abs(m_imagedata[index + 1] - avg) < sdev) {
+				
+			}
+			else {
+				
+			}
+		}
+	}*/
 }
 
 //void Capp4Doc::MyFloodFill(int x, int y, BYTE nr, BYTE ng, BYTE nb)

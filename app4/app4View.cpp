@@ -103,6 +103,7 @@ ON_COMMAND(ID_EDGE_UNSHARP_4, &Capp4View::OnEdgeUnsharp4)
 ON_COMMAND(ID_EDGE_UNSHARP_8, &Capp4View::OnEdgeUnsharp8)
 ON_COMMAND(ID_BUTTON11, &Capp4View::OnButton11)
 ON_COMMAND(ID_SOCKET_OPEN, &Capp4View::OnSocketOpen)
+ON_COMMAND(ID_BUTTON19, &Capp4View::OnButton19)
 END_MESSAGE_MAP()
 
 // Capp4View 생성/소멸
@@ -232,6 +233,15 @@ void Capp4View::OnDraw(CDC* pDC)
 			for (int i = 0; i < index; i++) {
 				memDC.Rectangle(point_x1[i], pDoc->m_height - point_y1[i], point_x2[i], pDoc->m_height - point_y2[i]);
 			}
+		}
+		else if (v[i].type == 16) {
+			//index = 0;
+			GetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
+			pDoc->Stain_inspection();
+			SetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
+			/*for (int i = 0; i < index; i++) {
+				memDC.Rectangle(point_x1[i], pDoc->m_height - point_y1[i], point_x2[i], pDoc->m_height - point_y2[i]);
+			}*/
 		}
 
 		pen.DeleteObject();
@@ -1352,6 +1362,13 @@ void Capp4View::AcceptProcess(SOCKET parm_h_socket) {
 		ip_address = inet_ntoa(client_addr.sin_addr);
 		MessageBox(ip_address, L"새로운 클라이언트가 접속했습니다. : ", MB_OK);
 
+		Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+		if (pDoc->m_file_path != "") {
+			SendOK(m_client_list[m_client_count - 1]);
+		}
+		else {
+			SendNO(m_client_list[m_client_count - 1]);
+		}
 	}
 	else {
 		//클라이언트가 더붙을려고할때 더이상붙을수없도록하는 코드나 현상황을 알려주는 메세지를 보내주는 코드 작성란
@@ -1408,7 +1425,7 @@ LRESULT Capp4View::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 				BOOL check = pDoc->OnOpenDocument(CString(temp));
 				Invalidate(true);
 				CString response;
-				if (check) {
+				if (check || pDoc->m_file_path!="") {
 					response = "OK";
 				}
 				else {
@@ -1427,4 +1444,43 @@ LRESULT Capp4View::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 		}
 	}
 	return CScrollView::WindowProc(message, wParam, lParam);
+}
+
+
+void Capp4View::OnButton19()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	pDoc->m_messageBox = false;
+	Draw_info draw;
+	draw.x1 = 0;
+	draw.y1 = 0;
+	draw.x2 = 0;
+	draw.y2 = 0;
+	draw.check = pDoc->m_vector_index;
+	draw.thickness = 3;
+	draw.r = 255;
+	draw.g = 0;
+	draw.b = 0;
+	draw.type = 16;
+	draw.brush_check = false;
+	draw.brush_r = pDoc->m_brush_color_r;
+	draw.brush_g = pDoc->m_brush_color_g;
+	draw.brush_b = pDoc->m_brush_color_b;
+	v.push_back(draw);
+	pDoc->m_vector_index++;
+	while (!s.empty()) {
+		s.pop();
+	}
+	Invalidate(false);
+}
+
+void Capp4View::SendOK(SOCKET temp_socket) {
+	char buf[256] = "OK";
+	send(temp_socket, buf, 256, 0);
+}
+
+void Capp4View::SendNO(SOCKET temp_socket) {
+	char buf[256] = "NO";
+	send(temp_socket, buf, 256, 0);
 }
