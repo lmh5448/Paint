@@ -64,6 +64,7 @@
 #define ID_BUTTON7                      32808
 #define ID_BUTTON8                      32809
 #define ID_BUTTON9                      32810
+#define ID_BRUSH_CHK                    32810
 #define ID_BUTTON10                     32811
 #define ID_BUTTON12                     32814
 #define ID_BUTTON13                     32815

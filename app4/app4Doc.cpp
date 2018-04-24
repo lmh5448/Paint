@@ -85,6 +85,8 @@ BEGIN_MESSAGE_MAP(Capp4Doc, CDocument)
 	ON_COMMAND(ID_SAVE_ONFILE, &Capp4Doc::OnSaveOnfile)
 	ON_COMMAND(ID_BINARY_CHECK, &Capp4Doc::OnBinaryCheck)
 	ON_UPDATE_COMMAND_UI(ID_BINARY_CHECK, &Capp4Doc::OnUpdateBinaryCheck)
+	ON_COMMAND(ID_BRUSH_CHK, &Capp4Doc::OnBrushChk)
+	ON_UPDATE_COMMAND_UI(ID_BRUSH_CHK, &Capp4Doc::OnUpdateBrushChk)
 END_MESSAGE_MAP()
 
 
@@ -265,6 +267,8 @@ BOOL Capp4Doc::OnOpenDocument(LPCTSTR lpszPathName)
 	for (int i = 0; i < pView->m_client_count; i++) {
 		pView->SendOK(pView->m_client_list[i]);
 	}
+
+	pView->InitQueue();
 
 	return TRUE;
 }
@@ -642,22 +646,11 @@ void Capp4Doc::Stain_inspection()
 	Capp4View* pView = (Capp4View*)((CMainFrame*)AfxGetMainWnd())->GetActiveView();
 	int i, j, n, m;
 	int index;
-	/*int quad_width = m_width/4;
-	int quad_height = m_height/4;
-	int hq_width = m_width / 8;
-	int hq_height = m_height / 8;*/
 	int div_width = m_width / 12;
 	int div_height = m_height / 12;
-	int quad_size;
-	int size;
-	double sum;
 	double sum_temp;
-	double avg;
-	double sdev;
 	double check[3][3];
 	int check_count[3][3];
-	sum = 0;
-	size = 0;
 
 	//배열
 	int** ar = new int*[div_height];
@@ -681,14 +674,17 @@ void Capp4Doc::Stain_inspection()
 		}
 	}
 	
-	for (i = 4; i < div_height-4; i ++) {
-		for (j = 4; j < div_width-4; j ++) {
+	for (i = 0; i < div_height-4; i ++) {
+		for (j = 0; j < div_width-4; j++) {
+			//초기화
 			for (n = 0; n < 3; n++) {
 				for (m = 0; m < 3; m++) {
 					check[n][m] = 0;
 					check_count[n][m] = 0;
 				}
 			}
+
+			//3x3행렬에 넣기
 			for (n = -4; n < 8; n++) {
 				for (m = -4; m < 8; m++) {
 					if ((i + n) < 0 || (i + n) >= div_height || (j + m) < 0 || (j + m) >= div_width)continue;
@@ -698,14 +694,20 @@ void Capp4Doc::Stain_inspection()
 					check_count[index_x][index_y]++;
 				}
 			}
+
+			//평균 구하기
 			for (n = 0; n < 3; n++) {
 				for (m = 0; m < 3; m++) {
 					check[n][m] /= check_count[n][m];
 				}
 			}
+			
+			//튀는값있으면 stain으로 검출
+			BOOL over_check = false;
 			for (n = 0; n < 3; n++) {
 				for (m = 0; m < 3; m++) {
-					if (abs(check[n][m] - check[1][1])>500) {
+					if (over_check==false && (check[n][m] - check[1][1])>450) {
+						over_check = true;
 						if (pView->stain_index >= 9999)continue;
 						pView->stain_point_x1[pView->stain_index] = j*12;
 						pView->stain_point_y1[pView->stain_index] = i*12;
@@ -724,68 +726,10 @@ void Capp4Doc::Stain_inspection()
 	free(ar);
 	free(ar_bool);
 
-	if (m_messageBox_stain == false && pView->stain_index>=10) {
+	if (m_messageBox_stain == false && pView->stain_index>=1) {
 		m_messageBox_stain = true;
 		AfxMessageBox(L"stain 감지");
 	}
-	//영역별로 평균,표준편차 구해서 이외의 범위 값들 변경후 보기
-	/*for (i = 0; i < m_width; i += quad_width) {
-		for (j = 0; j < m_height; j += quad_height) {
-			quad_size = 0;
-			sum = 0;
-			sum_temp = 0;
-			for (n = 0; n < quad_width; n++) {
-				for (m = 0; m < quad_height; m++) {
-					if (i + n >= m_width || j + m >= m_height)continue;
-					quad_size++;
-					index = (i + n)*m_channels + (j + m)*m_step;
-					sum_temp = 0;
-					sum_temp += m_imagedata[index + 0]*114;
-					sum_temp += m_imagedata[index + 1]*578;
-					sum_temp += m_imagedata[index + 2]*308;
-					sum_temp /= 1000;
-					sum += sum_temp;
-				}
-			}
-			avg = sum / quad_size;
-			sdev = 0;
-			for (n = 0; n < quad_width; n++) {
-				for (m = 0; m < quad_height; m++) {
-					if (i + n >= m_width || j + m >= m_height)continue;
-					index = (i + n)*m_channels + (j + m)*m_step;
-					sum_temp = 0;
-					sum_temp += m_imagedata[index + 0] * 114;
-					sum_temp += m_imagedata[index + 1] * 578;
-					sum_temp += m_imagedata[index + 2] * 308;
-					sum_temp /= 1000;
-					sdev += pow((sum_temp-avg),2.0);
-				}
-			}
-			sdev /= quad_size;
-
-			for (n = 0; n < quad_width; n++) {
-				for (m = 0; m < quad_height; m++) {
-					if (i + n >= m_width || j + m >= m_height)continue;
-					index = (i + n)*m_channels + (j + m)*m_step;
-					sum_temp = 0;
-					sum_temp += m_imagedata[index + 0] * 114;
-					sum_temp += m_imagedata[index + 1] * 578;
-					sum_temp += m_imagedata[index + 2] * 308;
-					sum_temp /= 1000;
-					if (sum_temp < avg - sdev/2) {
-						m_imagedata[index + 0] = 0;
-						m_imagedata[index + 1] = 0;
-						m_imagedata[index + 2] = 0;
-					}
-					else {
-						m_imagedata[index + 0] = 255;
-						m_imagedata[index + 1] = 255;
-						m_imagedata[index + 2] = 255;
-					}
-				}
-			}
-		}
-	}*/
 }
 
 //void Capp4Doc::MyFloodFill(int x, int y, BYTE nr, BYTE ng, BYTE nb)
@@ -1201,4 +1145,24 @@ BOOL Capp4Doc::OnSaveDocument(LPCTSTR lpszPathName)
 
 	File.Close();
 	return CDocument::OnSaveDocument(lpszPathName);
+}
+
+
+
+void Capp4Doc::OnBrushChk()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	m_brush_check = !m_brush_check;
+}
+
+
+void Capp4Doc::OnUpdateBrushChk(CCmdUI *pCmdUI)
+{
+	// TODO: 여기에 명령 업데이트 UI 처리기 코드를 추가합니다.
+	if (m_brush_check) {
+		pCmdUI->SetCheck(true);
+	}
+	else {
+		pCmdUI->SetCheck(false);
+	}
 }

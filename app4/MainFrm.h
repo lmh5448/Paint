@@ -58,7 +58,6 @@ public:
 	afx_msg void OnUpdateCombo4(CCmdUI *pCmdUI);
 	afx_msg void OnButton7();
 	afx_msg void OnButton8();
-	afx_msg void OnUpdateButton8(CCmdUI *pCmdUI);
 };
 
 

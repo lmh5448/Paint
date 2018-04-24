@@ -112,6 +112,7 @@ public:
 	afx_msg void OnButton19();
 	void Capp4View::SendOK(SOCKET temp_socket);
 	void Capp4View::SendNO(SOCKET temp_socket);
+	void Capp4View::InitQueue();
 };
 
 #ifndef _DEBUG  // app4View.cpp의 디버그 버전

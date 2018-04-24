@@ -172,7 +172,7 @@ void Capp4View::OnDraw(CDC* pDC)
 
 		//도형그리기 redo undo 때문에 계속 추가
 		//1연필 2선분 3사각형 4원 5지우개 6다각형 7색채우기 8히스토그램 필터
-		//9블러링 10엔드인 11감마 12샤프닝 13미디안 14엣지검출 15defect검출
+		//9블러링 10엔드인 11감마 12샤프닝 13미디안 14엣지검출 15defect검출 16stain검출
 		if(v[i].type==1 || v[i].type==2 || v[i].type==5 || v[i].type==6){
 			memDC.MoveTo(point1);
 			memDC.LineTo(point2);
@@ -1416,8 +1416,11 @@ LRESULT Capp4View::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 			char* temp;
 			temp = strtok(buf, " ");
 
-			if (strcmp(buf, "start") == 0) {
+			if (strcmp(buf, "defectstart") == 0) {
 				Capp4View::OnButton11();
+			}
+			else if (strcmp(buf, "stainstart") == 0) {
+				Capp4View::OnButton19();
 			}
 			else if (strcmp(temp, "open") == 0) {
 				//AfxMessageBox(L"1 : " + CString(temp));
@@ -1485,4 +1488,13 @@ void Capp4View::SendOK(SOCKET temp_socket) {
 void Capp4View::SendNO(SOCKET temp_socket) {
 	char buf[256] = "NO";
 	send(temp_socket, buf, 256, 0);
+}
+
+void Capp4View::InitQueue() {
+	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
+	v.clear();
+	while (!s.empty()) {
+		s.pop();
+	}
+	pDoc->m_vector_index = 1;
 }
