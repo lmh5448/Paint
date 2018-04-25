@@ -262,13 +262,14 @@ BOOL Capp4Doc::OnOpenDocument(LPCTSTR lpszPathName)
 	m_binary_check = false;
 	m_messageBox = false;
 	m_messageBox_stain = false;
+	m_messageBox_stain2 = false;
 	Capp4View* pView = (Capp4View*)(((CMainFrame*)AfxGetMainWnd())->GetActiveView());
 
 	for (int i = 0; i < pView->m_client_count; i++) {
 		pView->SendOK(pView->m_client_list[i]);
 	}
 
-	pView->InitQueue();
+	pView->OnInitialUpdate();
 
 	return TRUE;
 }
@@ -411,7 +412,7 @@ void Capp4Doc::Filter_sharpening()
 	int array_size = 3;
 	double array[3][3] = {
 		{ -1,-1,-1 },
-		{ -1, 8,-1 },
+		{ -1, 9,-1 },
 		{ -1,-1,-1 }
 	};
 	double sum = 9.0;
@@ -728,6 +729,89 @@ void Capp4Doc::Stain_inspection()
 
 	if (m_messageBox_stain == false && pView->stain_index>=1) {
 		m_messageBox_stain = true;
+		AfxMessageBox(L"stain 감지");
+	}
+}
+
+void Capp4Doc::Stain_inspection2()
+{
+	//stain 값의 빈도로 잡아보자
+	Capp4View* pView = (Capp4View*)((CMainFrame*)AfxGetMainWnd())->GetActiveView();
+	int i, j, n, m;
+	int index;
+	double sum, sum_temp;
+	double sdev;
+	int size;
+	//배열
+	double** ar = new double*[m_height];
+	for (i = 0; i < m_height; i++) {
+		ar[i] = new double[m_width];
+		ZeroMemory(ar[i], m_width * sizeof(double));
+	}
+
+	for (i = 0; i < m_height; i++) {
+		for (j = 0; j < m_width; j++) {
+			index = i * m_step + j * m_channels;
+			sum_temp = 0;
+			sum_temp += m_imagedata[index + 0] * 114;
+			sum_temp += m_imagedata[index + 1] * 578;
+			sum_temp += m_imagedata[index + 2] * 308;
+			sum_temp /= 1000;
+			ar[i][j] = sum_temp;
+		}
+	}
+	for (i = 0; i < m_height-96; i += 24) {
+		for (j = 0; j < m_width-96; j += 24) {
+			sum = 0;
+			sum_temp = 0;
+			sdev = 0;
+			size = 0;
+			for (n = 0; n < 144; n++) {
+				for (m = 0; m < 144; m++) {
+					if ((i + n) >= m_height || (j + m) >= m_width)continue;
+					sum += ar[i + n][j + m];
+					size++;
+				}
+			}
+			//평균
+			sum /= size;
+
+			//for (n = 0; n < 144; n++) {
+			//	for (m = 0; m < 144; m++) {
+			//		if ((i + n) >= m_height || (j + m) >= m_width)continue;
+			//		sum_temp += pow((ar[i + n][j + m] - sum), 2.0);
+			//	}
+			//}
+			////분산
+			//sum_temp /= size;
+			//sdev = sqrt(sum_temp);
+
+			int count = 0;
+			int count2 = 0;
+			for (n = 48; n < 96; n++) {
+				for (m = 48; m < 96; m++) {
+					if ((i + n) >= m_height || (j + m) >= m_width)continue;
+					if (sum - ar[i + n][j + m] > 0)count++;
+					count2++;
+				}
+			}
+
+			if (count*100>count2*70) {
+				if (pView->stain_index >= 9999)continue;
+				pView->stain_point_x1[pView->stain_index] = j+48;
+				pView->stain_point_y1[pView->stain_index] = i+48;
+				pView->stain_point_x2[pView->stain_index] = j+96;
+				pView->stain_point_y2[pView->stain_index] = i+96;
+				pView->stain_index++;
+			}
+		}
+	}
+	for (i = 0; i < m_height; i++) {
+		free(ar[i]);
+	}
+	free(ar);
+	if (m_messageBox_stain2 == false && pView->stain_index >= 1) {
+		m_messageBox_stain2 = true;
 		AfxMessageBox(L"stain 감지");
 	}
 }

@@ -59,6 +59,7 @@ public:
 	int m_edge = 0;
 	BOOL m_messageBox = false;
 	BOOL m_messageBox_stain = false;
+	BOOL m_messageBox_stain2 = false;
 // 작업입니다.
 public:
 
@@ -104,6 +105,7 @@ public:
 	afx_msg void Filter_edge();
 	afx_msg void Defect_inspection();
 	afx_msg void Stain_inspection();
+	afx_msg void Stain_inspection2();
 	//사용안한다 기능은 똑같지만 속도차이가 어마어마함 -> ExtFloodFill FLOODFILLSURFACE
 	//afx_msg void MyFloodFill(int x, int y, BYTE nr, BYTE ng, BYTE nb);
 	COLORREF GetRGB(int x,int y);

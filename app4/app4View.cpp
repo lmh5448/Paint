@@ -104,6 +104,7 @@ ON_COMMAND(ID_EDGE_UNSHARP_8, &Capp4View::OnEdgeUnsharp8)
 ON_COMMAND(ID_BUTTON11, &Capp4View::OnButton11)
 ON_COMMAND(ID_SOCKET_OPEN, &Capp4View::OnSocketOpen)
 ON_COMMAND(ID_BUTTON19, &Capp4View::OnButton19)
+ON_COMMAND(ID_BUTTON22, &Capp4View::OnButton22)
 END_MESSAGE_MAP()
 
 // Capp4View 생성/소멸
@@ -239,10 +240,19 @@ void Capp4View::OnDraw(CDC* pDC)
 			GetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
 			pDoc->Stain_inspection();
 			SetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
-			if (stain_index >= 10) {
+			if (stain_index >= 1) {
 				for (int i = 0; i < stain_index; i++) {
 					memDC.Rectangle(stain_point_x1[i], pDoc->m_height - stain_point_y1[i], stain_point_x2[i], pDoc->m_height - stain_point_y2[i]);
 				}
+			}
+		}
+		else if (v[i].type == 17) {
+			stain_index = 0;
+			GetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
+			pDoc->Stain_inspection2();
+			SetDIBits(pDC->m_hDC, pDoc->m_Cbitmap, 0, pDoc->m_height, pDoc->m_imagedata, &info_header, DIB_RGB_COLORS);
+			for (int i = 0; i < stain_index; i++) {
+				memDC.Rectangle(stain_point_x1[i], pDoc->m_height - stain_point_y1[i], stain_point_x2[i], pDoc->m_height - stain_point_y2[i]);
 			}
 		}
 
@@ -1490,11 +1500,31 @@ void Capp4View::SendNO(SOCKET temp_socket) {
 	send(temp_socket, buf, 256, 0);
 }
 
-void Capp4View::InitQueue() {
+
+void Capp4View::OnButton22()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
 	Capp4Doc* pDoc = (Capp4Doc*)GetDocument();
-	v.clear();
+	pDoc->m_messageBox = false;
+	Draw_info draw;
+	draw.x1 = 0;
+	draw.y1 = 0;
+	draw.x2 = 0;
+	draw.y2 = 0;
+	draw.check = pDoc->m_vector_index;
+	draw.thickness = 3;
+	draw.r = 255;
+	draw.g = 0;
+	draw.b = 0;
+	draw.type = 17;
+	draw.brush_check = false;
+	draw.brush_r = pDoc->m_brush_color_r;
+	draw.brush_g = pDoc->m_brush_color_g;
+	draw.brush_b = pDoc->m_brush_color_b;
+	v.push_back(draw);
+	pDoc->m_vector_index++;
 	while (!s.empty()) {
 		s.pop();
 	}
-	pDoc->m_vector_index = 1;
+	Invalidate(false);
 }
